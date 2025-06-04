@@ -1,0 +1,19 @@
+{
+  "name": "registry",
+  "private": true,
+  "version": "1.0.0",
+  "license": "MIT",
+  "scripts": {
+    "start": "pnpm i --frozen-lockfile && verdaccio -c verdaccio.yaml"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "packageManager": "pnpm@10.10.0",
+  "pnpm": {
+    "onlyBuiltDependencies": []
+  },
+  "devDependencies": {
+    "verdaccio": "7.0.0-next-7.20"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "tokota",
+  "private": true,
+  "packageManager": "pnpm@10.10.0",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "@eslint/js": "9.23.0",
+    "@types/eslint": "9.6.1",
+    "@types/eslint__js": "8.42.3",
+    "@typescript-eslint/parser": "8.27.0",
+    "@typescript-eslint/types": "8.27.0",
+    "eslint": "9.23.0",
+    "eslint-config-prettier": "10.1.1",
+    "eslint-plugin-perfectionist": "4.10.1",
+    "eslint-plugin-prettier": "5.2.3",
+    "globals": "16.1.0",
+    "prettier": "3.5.3",
+    "typescript": "5.8.2",
+    "typescript-eslint": "8.27.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": []
+  }
+}

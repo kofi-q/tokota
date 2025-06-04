@@ -1,0 +1,20 @@
+.{
+    .name = .tokota,
+    .version = "0.1.0",
+    .fingerprint = 0xe4591fcbcafe4f04,
+    .minimum_zig_version = "0.14.1",
+    .dependencies = .{
+        .base = .{
+            .hash = "base-0.1.0-rhH4pmk0BQDIWjxXCQWPojOa8eDb4iFVM4qVE5IT9yTt",
+            .url = "git+https://github.com/kofi-q/base-z.git#71b4ca6731ed478e3356421f35fc712cd043ae6a",
+        },
+    },
+    .paths = .{
+        "_build",
+        "build.zig.zon",
+        "build.zig",
+        "LICENSE",
+        "README.md",
+        "src",
+    },
+}

@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "alwaysStrict": true,
+    "checkJs": true,
+    "declaration": true,
+    "declarationMap": false,
+    "esModuleInterop": true,
+    "incremental": true,
+    "isolatedModules": true,
+    "lib": ["ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "outDir": "build",
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ESNext"
+  }
+}

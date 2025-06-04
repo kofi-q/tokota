@@ -1,0 +1,51 @@
+{
+  "npm.packageManager": "pnpm",
+  "editor.formatOnSave": true,
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "editor.codeActionsOnSave": {
+    "source.removeUnusedImports": "explicit",
+    "source.fixAll": "explicit"
+  },
+  "typescript.workspaceSymbols.scope": "currentProject",
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/*.code-search": true,
+    "**/.zig-cache": true,
+    "**/zig-out": true
+  },
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/.hg/store/**": true,
+    "**/.zig-cache": true,
+    "**/zig-out": true
+  },
+  "cSpell.words": [
+    "adduser",
+    "aliasee",
+    "allo",
+    "anyerror",
+    "anyopaque",
+    "anytype",
+    "autodoc",
+    "callconv",
+    "deinit",
+    "doctest",
+    "doctests",
+    "encabulate",
+    "Encabulation",
+    "napi",
+    "orelse",
+    "Tokota",
+    "usingnamespace",
+    "usize"
+  ],
+  "cSpell.enabled": true
+}

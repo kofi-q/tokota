@@ -1,0 +1,35 @@
+{
+  "name": "hello-z",
+  "version": "1.0.0",
+  "keywords": [
+    "hello",
+    "napi",
+    "tokota",
+    "zig"
+  ],
+  "author": "Someone W. Codes <someone@example.com>",
+  "license": "MIT",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "files": [
+    "build"
+  ],
+  "scripts": {
+    "build": "pnpm i --frozen-lockfile && tsc",
+    "clean": "zig build clean"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "packageManager": "pnpm@10.10.0",
+  "pnpm": {
+    "onlyBuiltDependencies": []
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "http://localhost:4873"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3"
+  }
+}

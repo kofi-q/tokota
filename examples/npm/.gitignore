@@ -1,0 +1,5 @@
+*.node
+build
+packages
+node_modules
+zig-out
