@@ -1,6 +1,6 @@
 # Tokota
 
-`› build / package / publish multi-platform NodeJS addons written in Zig 🧡 `
+` › build / package / publish multi-platform NodeJS addons written in Zig 🧡 `
 
 ```zig
 //! addon.zig
@@ -258,6 +258,12 @@ pub const Encabulator = t.ClassZ("Turbo", struct {
 ```js
 // module.js
 
+
+
+
+
+
+
 const internal = "Not exported";
 
 export const TUNING_HZ = 440;
@@ -369,7 +375,7 @@ referenced by:
 
 In the example below, `multiply()` serves as the native callback for the equivalent `multiply()` function that is exported in JS. Callbacks are the main communication mechanism between JS code and native addons. They can accept any number of arguments, which will be extracted from the JS call and then validated and converted to the requested Zig type (unless they are of the generic container type, [`Val`](#val), which requires no conversion). [More on that later](#type-conversion).
 
-Callbacks can also optionally accept a special [`Call`](./src/function/call.zig) object as the first argument. The `Call` object contains information about the incoming JS function call (including the arguments and the `this` JS object attached to the call) as well as a pointer to the JS runtime [`Env`](#Env) instance.
+Callbacks can also optionally accept a special [`Call`](https://kofi-q.github.io/tokota/#tokota.Call) object as the first argument. The `Call` object contains information about the incoming JS function call (including the arguments and the `this` JS object attached to the call) as well as a pointer to the JS runtime [`Env`](#Env) instance.
 
 The following are functionally equivalent implementations of the same callback:
 
@@ -422,7 +428,7 @@ pub fn multiply(call: tokota.Call) !tokota.Val {
 </tr>
 </table>
 
-The latter pattern provides more flexibility when dealing with with more complex APIs or types, while the former may be more convenient in simpler scenarios and may also open up possibilities for much easier automatic TypeScript type generation, if that's your cup of tea. Take a look at [`Call`](./src/function/call.zig) documentation for other argument/call info access patterns.
+The latter pattern provides more flexibility when dealing with with more complex APIs or types, while the former may be more convenient in simpler scenarios and may also open up possibilities for much easier automatic TypeScript type generation, if that's your cup of tea. Take a look at [`Call`](https://kofi-q.github.io/tokota/#tokota.Call) documentation for other argument/call info access patterns.
 
 Note that the `Call` argument can be received alongside other provided arguments as well, when needed:
 
