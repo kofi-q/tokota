@@ -115,10 +115,10 @@ pub fn build(b: *std.Build) void {
 
         step_check.dependOn(&b.addLibrary(.{
             .name = blk: {
-                var buf: [32]u8 = undefined;
-                _ = std.mem.replace(u8, config.dir, "/", "-", &buf);
+                const name = b.dupe(config.dir);
+                std.mem.replaceScalar(u8, name, '/', '-');
 
-                break :blk b.fmt("[check] {s}", .{buf});
+                break :blk b.fmt("[check] {s}", .{name});
             },
             .root_module = addon.root_module,
         }).step);

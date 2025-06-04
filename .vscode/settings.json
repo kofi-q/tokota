@@ -27,6 +27,8 @@
     "**/.zig-cache": true,
     "**/zig-out": true
   },
+  "zig.zls.enableBuildOnSave": true,
+  "zig.zls.buildOnSaveArgs": ["check"],
   "cSpell.words": [
     "adduser",
     "aliasee",
