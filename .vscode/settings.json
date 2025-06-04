@@ -42,7 +42,9 @@
     "encabulate",
     "Encabulation",
     "napi",
+    "npmignore",
     "orelse",
+    "pkgs",
     "Tokota",
     "usingnamespace",
     "usize"

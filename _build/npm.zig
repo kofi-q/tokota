@@ -226,6 +226,11 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
         const pkg_files = b.addWriteFiles();
         if (opts.pre_package) |pre| pkg_files.step.dependOn(pre);
 
+        _ = if (opts.npmignore) |npmignore|
+            pkg_files.addCopyFile(npmignore, ".npmignore");
+
+        _ = if (opts.npmrc) |npmrc| pkg_files.addCopyFile(npmrc, ".npmrc");
+
         const pkg_dir = b.path(b.pathJoin(&.{
             // [TODO] Would be less brittle to get this path from the
             // `package_install` step above, but haven't figure out an easy way
@@ -234,14 +239,16 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
             opts.output_dir,
             pkg_name,
         }));
+
         const pkg_clean = b.addRemoveDirTree(pkg_dir);
+        pkg_files.step.dependOn(&pkg_clean.step);
+        addon.install.step.dependOn(&pkg_clean.step);
 
         const pkg_install = b.addInstallDirectory(.{
             .install_dir = .{ .custom = opts.output_dir },
             .install_subdir = pkg_name,
             .source_dir = pkg_files.getDirectory(),
         });
-        pkg_install.step.dependOn(&pkg_clean.step);
         pkg_install.step.dependOn(&pkg_files.step);
         pkg_install.step.dependOn(&addon.install.step);
         install_all.dependOn(&pkg_install.step);
@@ -264,11 +271,6 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
         };
 
         if (opts.configureLib) |configure| configure(b, bin_pkg.addon.lib);
-
-        _ = if (opts.npmignore) |npmignore|
-            pkg_files.addCopyFile(npmignore, ".npmignore");
-
-        _ = if (opts.npmrc) |npmrc| pkg_files.addCopyFile(npmrc, ".npmrc");
     }
 
     const bin_filename = blk: {
@@ -368,14 +370,15 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
             opts.output_dir,
             main_pkg_name,
         }));
+
         const pkg_clean = b.addRemoveDirTree(pkg_dir);
+        pkg_files.step.dependOn(&pkg_clean.step);
 
         const package_install = b.addInstallDirectory(.{
             .install_dir = .{ .custom = opts.output_dir },
             .install_subdir = main_pkg_name,
             .source_dir = pkg_files.getDirectory(),
         });
-        package_install.step.dependOn(&pkg_clean.step);
         package_install.step.dependOn(&pkg_files.step);
         install_all.dependOn(&package_install.step);
 
