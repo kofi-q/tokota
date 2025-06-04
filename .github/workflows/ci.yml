@@ -107,7 +107,7 @@ jobs:
 
   publish-docs:
     runs-on: ubuntu-latest
-    if: github.ref_name == 'never'
+    if: github.ref_name == 'main'
     needs: [lib-build-and-test, npm-example-test]
     steps:
       - name: Install ZVM
