@@ -2,6 +2,8 @@
 
 ` › build / package / publish multi-platform NodeJS addons written in Zig 🧡 `
 
+[Documentation ↗](https://kofi-q.github.io/tokota) | | [Overview](#overview) | | [Versions](#versions) | | [Getting Started](#getting-started) | | [Beyond Hello...](#beyond-hello)
+
 ```zig
 //! addon.zig
 
