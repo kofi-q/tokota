@@ -131,7 +131,7 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const mode = b.standardOptimizeOption(.{});
 
-    const addon = tokota.addons.create(b, .{
+    const addon = tokota.Addon.create(b, .{
         .name = "leftpad-z",
         .mode = mode,
         .target = target,
