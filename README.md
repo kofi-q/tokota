@@ -87,7 +87,7 @@ Bun provides an implementation of the Node-API.
 
 > [!IMPORTANT]
 >
-> Although most addons that work with NodeJS should work with Bun as well, full API coverage is still a [work-in-progress](https://github.com/oven-sh/bun/issues/158) at the time of writing, so I'd recommend testing your library fully with Bun if you intend to explicitly support it. [Here's a list of test exceptions](https://github.com/search?q=repo%3Akofi-q%2Ftokota+%5BSKIP%5D+Bun%3A&type=code) being made in this repo for Bun at the moment (a list that has been shrinking rapidly, for what it's worth).
+> Although most addons that work with NodeJS should work with Bun as well, full API coverage is still a [work-in-progress](https://github.com/oven-sh/bun/issues/158) at the time of writing, so I'd recommend testing your library fully with Bun if you intend to explicitly support it. [Here's a list of test exceptions](https://github.com/search?q=repo%3Akofi-q%2Ftokota+%22%5BSKIP%5D+Bun%3A%22&type=code) being made in this repo for Bun at the moment (a list that has been shrinking rapidly, for what it's worth).
 
 ### Deno
 
@@ -97,7 +97,7 @@ Deno also provides a work-in-progress (at the time of writing) Node-API implemen
 
 > [!IMPORTANT]
 >
-> There may be a few bugs/behavioural differences in parts of the API, so I'd recommend testing your library fully with Deno if you intend to explicitly support it. [Here's a list of test exceptions](https://github.com/search?q=repo%3Akofi-q%2Ftokoa+%5BSKIP%5D+Deno%3A&type=code) being made in this repo for Deno at the moment.
+> There may be a few bugs/behavioural differences in parts of the API, so I'd recommend testing your library fully with Deno if you intend to explicitly support it. [Here's a list of test exceptions](https://github.com/search?q=repo%3Akofi-q%2Ftokota+%22%5BSKIP%5D+Deno%3A%22&type=code) being made in this repo for Deno at the moment.
 
 ### Electron
 
