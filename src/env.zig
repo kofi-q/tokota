@@ -189,28 +189,23 @@ const NapiEnv = opaque {
                 \\     flag to find the relevant source location.
             ),
 
-            type => switch (@typeInfo(payload)) {
-                .@"enum" => if (comptime @hasDecl(payload, "toJs"))
-                    try payload.toJs(self)
-                else
-                    (try self.enumObject(payload)).ptr,
+            type => if (comptime @hasDecl(payload, "toJs"))
+                try payload.toJs(self)
+            else switch (@typeInfo(payload)) {
+                .@"enum" => (try self.enumObject(payload)).ptr,
 
-                .@"struct" => if (comptime @hasDecl(payload, "toJs"))
-                    try payload.toJs(self)
-                else
-                    (try self.api(payload, {})).ptr,
+                .@"struct" => (try self.api(payload, {})).ptr,
 
-                .@"opaque", .@"union" => if (comptime @hasDecl(payload, "toJs"))
-                    try payload.toJs(self)
-                else
-                    @compileError(std.fmt.comptimePrint(
-                        \\Inferred type conversion is not supported for {s}
-                        \\Consider adding a `fn toJs(Env) !Val` method to the
-                        \\type to define a custom conversion function.
-                        \\
-                        \\(❓) You may need to build with the `-freference-trace`
-                        \\     flag to find the relevant source location.
-                    , .{@typeName(payload)})),
+                .@"opaque",
+                .@"union",
+                => @compileError(std.fmt.comptimePrint(
+                    \\Inferred type conversion is not supported for {s}
+                    \\Consider adding a `fn toJs(Env) !Val` method to the
+                    \\type to define a custom conversion function.
+                    \\
+                    \\(❓) You may need to build with the `-freference-trace`
+                    \\     flag to find the relevant source location.
+                , .{@typeName(payload)})),
 
                 else => @compileError(std.fmt.comptimePrint(
                     \\Inferred type conversion is not supported for {s}
