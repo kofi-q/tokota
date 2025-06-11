@@ -7,7 +7,11 @@ const std = @import("std");
 
 const napi = @import("tokota").napi;
 
-pub fn main() !void {
+comptime {
+    @import("tokota").exportModule(@This());
+}
+
+pub fn emit() !void {
     const decls = @typeInfo(napi).@"struct".decls;
 
     const symbols = comptime blk: {
@@ -30,10 +34,8 @@ pub fn main() !void {
         \\
     );
 
-    for (symbols) |symbol| {
-        try std_out.print(
-            \\    {s}
-            \\
-        , .{symbol});
-    }
+    for (symbols) |symbol| try std_out.print(
+        \\    {s}
+        \\
+    , .{symbol});
 }

@@ -2,7 +2,11 @@ const std = @import("std");
 
 const napi = @import("tokota").napi;
 
-pub fn main() !void {
+comptime {
+    @import("tokota").exportModule(@This());
+}
+
+pub fn emit() !void {
     const decls = @typeInfo(napi).@"struct".decls;
 
     const symbols = comptime blk: {

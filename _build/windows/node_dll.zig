@@ -1,5 +1,6 @@
 const std = @import("std");
 
+const Addon = @import("../Addon.zig");
 const tokota = @import("../tokota.zig");
 
 /// Adds a build step for emitting a `node.def` module-definition file for
@@ -7,33 +8,35 @@ const tokota = @import("../tokota.zig");
 ///
 /// Creates a `namedLazyPath("node.def")` build graph node representing the
 /// output path to the generated file.
-pub fn addNodeDef(b: *std.Build, mode: std.builtin.OptimizeMode) void {
+pub fn updateSource(
+    b: *std.Build,
+    mode: std.builtin.OptimizeMode,
+    dep_tokota: ?*std.Build.Dependency,
+) *std.Build.Step.UpdateSourceFiles {
     const native_target = b.resolveTargetQuery(.{});
 
-    const mod_tokota_native = b.createModule(
-        tokota.moduleOpts(b, mode, native_target),
-    );
-
-    const emit_symbols_exe = b.addExecutable(.{
-        .name = "emit_dll_symbols",
-        .root_module = b.createModule(.{
-            .imports = &.{
-                .{ .name = "tokota", .module = mod_tokota_native },
-            },
-            .optimize = mode,
-            .root_source_file = b.path("_build/windows/emit_node_def.zig"),
-            .target = native_target,
-        }),
+    const addon = Addon.create(b, .{
+        .mode = mode,
+        .target = native_target,
+        .name = "emit_node_def",
+        .output_dir = .{ .custom = "../_build/windows" },
+        .root_source_file = b.path("_build/windows/emit_node_def.zig"),
+        .tokota = .{ .dep = dep_tokota },
     });
-    const emit_symbols_run = b.addRunArtifact(emit_symbols_exe);
 
-    const node_def = b.addWriteFiles();
-    node_def.step.dependOn(&emit_symbols_run.step);
+    const emit = b.addSystemCommand(&.{"node"});
+    emit.addFileArg(b.path("_build/windows/emit_node_def.js"));
+    emit.step.dependOn(&addon.install.step);
 
-    b.addNamedLazyPath("node.def", node_def.addCopyFile(
-        emit_symbols_run.captureStdOut(),
-        "tokota-build/windows/node.def",
-    ));
+    const node_def = b.addUpdateSourceFiles();
+    node_def.step.dependOn(&emit.step);
+
+    const filename = "_build/windows/node.def";
+    _ = node_def.addCopyFileToSource(emit.captureStdOut(), filename);
+
+    b.addNamedLazyPath("node.def", b.path(filename));
+
+    return node_def;
 }
 
 /// Generates a `node.lib` stub DLL containing Node-API symbols to link against

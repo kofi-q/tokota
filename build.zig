@@ -21,6 +21,7 @@ pub fn build(b: *std.Build) void {
     const step_test_deno = b.step("test:deno", "Run Deno integration tests");
     const step_test_node = b.step("test:node", "Run NodeJS integration tests");
     const step_test_zig = b.step("test:zig", "Run native unit tests");
+    const step_symbols = b.step("symbols", "Generate Node-API symbol stubs");
 
     step_test.dependOn(step_test_zig);
     step_test.dependOn(step_test_node);
@@ -29,15 +30,20 @@ pub fn build(b: *std.Build) void {
 
     step_test_ci.dependOn(step_test_zig);
 
-    node_dll.addNodeDef(b, mode);
-    node_stub_so.addLibNode(b, mode);
-
     const mod_tokota = b.addModule(
         "tokota",
         tokota.moduleOpts(b, mode, target),
     );
 
     var dep_tokota_internal = std.Build.Dependency{ .builder = b };
+
+    // [TODO] Add CI checks for up-to-date stubs.
+    step_symbols.dependOn(
+        &node_dll.updateSource(b, mode, &dep_tokota_internal).step,
+    );
+    step_symbols.dependOn(
+        &node_stub_so.updateSource(b, mode, &dep_tokota_internal).step,
+    );
 
     const mod_testing = b.createModule(.{
         .optimize = mode,

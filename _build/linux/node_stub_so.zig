@@ -1,34 +1,37 @@
 const std = @import("std");
 
+const Addon = @import("../Addon.zig");
 const tokota = @import("../tokota.zig");
 
-pub fn addLibNode(b: *std.Build, mode: std.builtin.OptimizeMode) void {
+pub fn updateSource(
+    b: *std.Build,
+    mode: std.builtin.OptimizeMode,
+    dep_tokota: ?*std.Build.Dependency,
+) *std.Build.Step.UpdateSourceFiles {
     const native_target = b.resolveTargetQuery(.{});
 
-    const mod_tokota_native = b.createModule(
-        tokota.moduleOpts(b, mode, native_target),
-    );
-
-    const exe_emit_stub_src = b.addExecutable(.{
-        .name = "emit_libnode_stub",
-        .root_module = b.createModule(.{
-            .imports = &.{
-                .{ .name = "tokota", .module = mod_tokota_native },
-            },
-            .optimize = .Debug,
-            .root_source_file = b.path("_build/linux/emit_node_stub_so.zig"),
-            .target = b.resolveTargetQuery(.{}),
-        }),
+    const addon = Addon.create(b, .{
+        .mode = mode,
+        .target = native_target,
+        .name = "emit_libnode_source",
+        .output_dir = .{ .custom = "../_build/linux" },
+        .root_source_file = b.path("_build/linux/emit_libnode_source.zig"),
+        .tokota = .{ .dep = dep_tokota },
     });
-    const emit_stub_src = b.addRunArtifact(exe_emit_stub_src);
 
-    const libnode_zig = b.addWriteFiles();
-    libnode_zig.step.dependOn(&emit_stub_src.step);
+    const emit = b.addSystemCommand(&.{"node"});
+    emit.addFileArg(b.path("_build/linux/emit_libnode_source.js"));
+    emit.step.dependOn(&addon.install.step);
 
-    b.addNamedLazyPath("libnode.zig", libnode_zig.addCopyFile(
-        emit_stub_src.captureStdOut(),
-        "tokota-build/linux/libnode.zig",
-    ));
+    const libnode_zig = b.addUpdateSourceFiles();
+    libnode_zig.step.dependOn(&emit.step);
+
+    const filename = "_build/linux/libnode.zig";
+    _ = libnode_zig.addCopyFileToSource(emit.captureStdOut(), filename);
+
+    b.addNamedLazyPath("libnode.zig", b.path(filename));
+
+    return libnode_zig;
 }
 
 pub fn build(
