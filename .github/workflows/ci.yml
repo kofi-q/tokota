@@ -119,21 +119,6 @@ jobs:
         run: |
           zvm install master
 
-      - name: Set Up NodeJS
-        uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.2.15
-
-      - name: Install Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: 2.3.3
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
