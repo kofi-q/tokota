@@ -27,7 +27,7 @@ pub fn addLibNode(b: *std.Build, mode: std.builtin.OptimizeMode) void {
 
     b.addNamedLazyPath("libnode.zig", libnode_zig.addCopyFile(
         emit_stub_src.captureStdOut(),
-        "tokota-build/linux",
+        "tokota-build/linux/libnode.zig",
     ));
 }
 

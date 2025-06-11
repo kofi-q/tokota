@@ -32,7 +32,7 @@ pub fn addNodeDef(b: *std.Build, mode: std.builtin.OptimizeMode) void {
 
     b.addNamedLazyPath("node.def", node_def.addCopyFile(
         emit_symbols_run.captureStdOut(),
-        "tokota-build/windows",
+        "tokota-build/windows/node.def",
     ));
 }
 
