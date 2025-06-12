@@ -119,22 +119,31 @@ export function registerTests(addon) {
       assert.deepEqual(array, ["foo", "bar"]);
       assert.deepEqual(Refs.tempRefGetValue(), ["foo", "bar"]);
 
-      Refs.tempRefDelete();
-      assert.deepEqual(array, ["foo", "bar"]);
+      refCount = Refs.tempRefDecrementCount();
+      assert.equal(refCount, 1);
+
+      refCount = Refs.tempRefDecrementCount();
+      assert.equal(refCount, 0);
 
       switch (RUNTIME) {
-        case "deno":
+        case "bun":
+          // [NOTE] Not necessarily a bad thing, just different from the NodeJS
+          // reference implementation.
           console.error(
-            "🚨 [SKIP] Deno: Panic when attempting to extract deleted ref's value",
+            "🚨 [SKIP] Bun: napi_reference_unref doesn't return an error " +
+              "when the ref count is already 0.",
           );
+          refCount = Refs.tempRefDecrementCount();
+          assert.equal(refCount, 0);
           break;
 
         default:
-          assert.notDeepEqual(Refs.tempRefGetValue(), ["foo", "bar"]);
+          assert.throws(Refs.tempRefDecrementCount);
           break;
       }
 
-      globalThis.gc?.();
+      Refs.tempRefDelete();
+      assert.deepEqual(array, ["foo", "bar"]);
     });
 
     test("supported referenced value types", () => {

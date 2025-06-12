@@ -1,3 +1,4 @@
+const std = @import("std");
 const Env = @import("../root.zig").Env;
 const n = @import("../napi.zig");
 const t = @import("../root.zig");
@@ -11,6 +12,10 @@ const Val = @import("../root.zig").Val;
 /// JS types that support references have a ref method available, e.g.
 /// `Object.ref()`, `ArrayBuffer.ref()`, etc. Starting in `NapiVersion`.`v10`,
 /// references can be created for any JS value via, `Val.ref()`.
+///
+/// > #### ⚠ NOTE
+/// > Attempting to use a `Ref` after a call to `Ref.delete()` is unchecked
+/// illegal behaviour and may result in the process being aborted.
 ///
 /// ## Example
 /// ```zig
@@ -84,6 +89,11 @@ pub fn Ref(comptime T: type) type {
         }
 
         /// Retrieves the previously referenced value.
+        ///
+        /// Returns `null` if the ref is no longer valid. However, this
+        /// behaviour should not be relied on for determining ref validity, as
+        /// it is inconsistent and attempts to extract values from
+        /// invalid/deleted refs may result in panic.
         ///
         /// https://nodejs.org/docs/latest/api/n-api.html#napi_get_reference_value
         pub fn val(self: Self, env: Env) !?T {
