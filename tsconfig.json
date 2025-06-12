@@ -20,7 +20,14 @@
     "strict": true,
     "target": "ESNext"
   },
+  "exclude": [
+    "**/.zig-cache",
+    "**/zig-build",
+    "**/build",
+    "**/node_modules",
+  ],
   "include": [
-    "src"
+    "prettier.config.mjs",
+    "src",
   ]
 }

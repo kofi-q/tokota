@@ -8,8 +8,10 @@ import { globalIgnores } from "eslint/config";
 const config = tsEsLint.config(
   globalIgnores([
     "**/.zig-cache",
+    "**/_build",
     "**/node_modules",
     "**/zig-out",
+    "examples",
     "eslint.config.mjs",
   ]),
   eslint.configs.recommended,

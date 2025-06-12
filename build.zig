@@ -13,22 +13,31 @@ pub fn build(b: *std.Build) void {
     const mode = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
 
-    const step_check = b.step("check", "Generate compiler diagnostics");
-    const step_docs = b.step("docs", "Generate documentation");
-    const step_test = b.step("test", "Run all tests");
-    const step_test_bun = b.step("test:bun", "Run Bun integration tests");
-    const step_test_ci = b.step("test:ci", "Run CI tests");
-    const step_test_deno = b.step("test:deno", "Run Deno integration tests");
-    const step_test_node = b.step("test:node", "Run NodeJS integration tests");
-    const step_test_zig = b.step("test:zig", "Run native unit tests");
-    const step_symbols = b.step("symbols", "Generate Node-API symbol stubs");
+    const steps = Steps{
+        .check = b.step("check", "Generate compiler diagnostics"),
+        .docs = b.step("docs", "Generate documentation"),
+        .deps_js = b.step("deps:js", "Install JS deps"),
+        .fmt = b.step("fmt", "Format/lint source files"),
+        .tests = b.step("test", "Run all tests"),
+        .test_bun = b.step("test:bun", "Run Bun integration tests"),
+        .test_ci = b.step("test:ci", "Run CI tests"),
+        .test_deno = b.step("test:deno", "Run Deno integration tests"),
+        .test_node = b.step("test:node", "Run NodeJS integration tests"),
+        .test_zig = b.step("test:zig", "Run native unit tests"),
+        .typecheck = b.step("typecheck", "Run JS type checks"),
+        .symbols = b.step("symbols", "Generate Node-API symbol stubs"),
+    };
 
-    step_test.dependOn(step_test_zig);
-    step_test.dependOn(step_test_node);
-    step_test.dependOn(step_test_bun);
-    step_test.dependOn(step_test_deno);
+    steps.tests.dependOn(steps.fmt);
+    steps.tests.dependOn(steps.test_bun);
+    steps.tests.dependOn(steps.test_deno);
+    steps.tests.dependOn(steps.test_node);
+    steps.tests.dependOn(steps.test_zig);
+    steps.tests.dependOn(steps.typecheck);
 
-    step_test_ci.dependOn(step_test_zig);
+    steps.test_ci.dependOn(steps.fmt);
+    steps.test_ci.dependOn(steps.test_zig);
+    steps.test_ci.dependOn(steps.typecheck);
 
     const mod_tokota = b.addModule(
         "tokota",
@@ -41,12 +50,16 @@ pub fn build(b: *std.Build) void {
     b.addNamedLazyPath(node_stub_so.src_name, b.path(node_stub_so.src_path));
 
     // [TODO] Add CI checks for up-to-date stubs.
-    step_symbols.dependOn(
+    steps.symbols.dependOn(
         &node_dll.updateSource(b, mode, &dep_tokota_internal).step,
     );
-    step_symbols.dependOn(
+    steps.symbols.dependOn(
         &node_stub_so.updateSource(b, mode, &dep_tokota_internal).step,
     );
+
+    depsJs(b, &steps);
+    fmt(b, &steps);
+    typecheck(b, &steps);
 
     const mod_testing = b.createModule(.{
         .optimize = mode,
@@ -54,8 +67,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
     });
 
-    const lib_check = libCheck(b, mode, target);
-    step_check.dependOn(&lib_check.step);
+    const lib_check = libCheck(b, &steps, mode, target);
 
     const lib_tokota_tests = b.addTest(.{
         .root_module = lib_check.root_module,
@@ -64,7 +76,7 @@ pub fn build(b: *std.Build) void {
     Addon.linkNodeStub(b, lib_tokota_tests, &dep_tokota_internal);
 
     const cmd_test_tokota = b.addRunArtifact(lib_tokota_tests);
-    step_test_zig.dependOn(&cmd_test_tokota.step);
+    steps.test_zig.dependOn(&cmd_test_tokota.step);
 
     inline for (examples.configs) |config| {
         const example_dir = b.pathJoin(&.{ examples.dir, config.name });
@@ -97,14 +109,13 @@ pub fn build(b: *std.Build) void {
         example_run.dependOn(&node_run.step);
     }
 
-    const node_test = b.addSystemCommand(&.{
-        "node", "--expose-gc", "--test",
-    });
-    step_test_node.dependOn(&node_test.step);
+    const node_test = b.addSystemCommand(&.{ "node", "--expose-gc", "--test" });
+    node_test.setCwd(b.path("."));
+    steps.test_node.dependOn(&node_test.step);
     if (b.args) |args| node_test.addArgs(args);
 
     const deno_test = denoTest(b, target.result);
-    step_test_deno.dependOn(deno_test);
+    steps.test_deno.dependOn(deno_test);
 
     inline for (tests.configs) |config| {
         const dirpath = "src/" ++ config.dir;
@@ -122,7 +133,7 @@ pub fn build(b: *std.Build) void {
             .tokota = .{ .dep = &dep_tokota_internal },
         });
 
-        step_check.dependOn(&b.addLibrary(.{
+        steps.check.dependOn(&b.addLibrary(.{
             .name = blk: {
                 const name = b.dupe(config.dir);
                 std.mem.replaceScalar(u8, name, '/', '-');
@@ -137,15 +148,15 @@ pub fn build(b: *std.Build) void {
 
         const bun_test = bunTest(b, b.pathJoin(&.{ ".", dirpath, "test.mjs" }));
         bun_test.dependOn(&addon.install.step);
-        step_test_bun.dependOn(bun_test);
+        steps.test_bun.dependOn(bun_test);
     }
 
-    step_docs.dependOn(docs(b, b.addLibrary(.{
+    steps.docs.dependOn(docs(b, b.addLibrary(.{
         .name = "tokota",
         .root_module = mod_tokota,
     }), "docs"));
 
-    step_docs.dependOn(docs(b, b.addLibrary(.{
+    steps.docs.dependOn(docs(b, b.addLibrary(.{
         .name = "tokota_build",
         .root_module = b.createModule(.{
             .imports = &.{
@@ -156,13 +167,12 @@ pub fn build(b: *std.Build) void {
             .target = target,
         }),
     }), "docs/build"));
-
-    step_test_ci.dependOn(step_test_zig);
-    step_test_ci.dependOn(step_test_node);
 }
 
 fn bunTest(b: *std.Build, filename: []const u8) *std.Build.Step {
     const bun_test = b.addSystemCommand(&.{ "bun", "test", filename });
+    bun_test.setCwd(b.path("."));
+
     return &bun_test.step;
 }
 
@@ -175,6 +185,7 @@ fn denoTest(b: *std.Build, target: std.Target) *std.Build.Step {
         "--allow-read",
         "--no-check",
     });
+    deno_test.setCwd(b.path("."));
     if (target.os.tag != .macos) {
         // These fail in Deno due to missing symbols.
         deno_test.addArg("--ignore=src/array_buffer/v10,src/object/v10");
@@ -185,10 +196,11 @@ fn denoTest(b: *std.Build, target: std.Target) *std.Build.Step {
 
 fn libCheck(
     b: *std.Build,
+    steps: *const Steps,
     mode: std.builtin.OptimizeMode,
     target: std.Build.ResolvedTarget,
 ) *std.Build.Step.Compile {
-    return b.addLibrary(.{
+    const lib = b.addLibrary(.{
         .name = "tokota_check",
         .root_module = b.createModule(.{
             .imports = tokota.imports(b, mode, target),
@@ -198,6 +210,40 @@ fn libCheck(
             .target = target,
         }),
     });
+    steps.check.dependOn(&lib.step);
+
+    return lib;
+}
+
+fn fmt(b: *std.Build, steps: *const Steps) void {
+    const eslint = b.addSystemCommand(&.{ "pnpm", "eslint" });
+    if (!isCi()) eslint.addArg("--fix");
+    eslint.step.dependOn(steps.deps_js);
+
+    const prettier = b.addSystemCommand(&.{ "pnpm", "prettier" });
+    prettier.addArg(if (isCi()) "--check" else "--write");
+    prettier.addArg("src");
+    prettier.step.dependOn(steps.deps_js);
+
+    const zig_fmt = b.addFmt(.{
+        .check = isCi(),
+        .paths = &.{"src"},
+    });
+
+    steps.fmt.dependOn(&zig_fmt.step);
+    steps.fmt.dependOn(&eslint.step);
+    steps.fmt.dependOn(&prettier.step);
+}
+
+fn depsJs(b: *std.Build, steps: *const Steps) void {
+    const run = b.addSystemCommand(&.{ "pnpm", "i", "--frozen-lockfile" });
+    steps.deps_js.dependOn(&run.step);
+}
+
+fn typecheck(b: *std.Build, steps: *const Steps) void {
+    const run = b.addSystemCommand(&.{ "pnpm", "tsc" });
+    run.step.dependOn(steps.deps_js);
+    steps.typecheck.dependOn(&run.step);
 }
 
 fn docs(
@@ -230,6 +276,10 @@ fn docs(
     });
 
     return &docs_install.step;
+}
+
+fn isCi() bool {
+    return std.process.hasNonEmptyEnvVarConstant("CI");
 }
 
 const examples = struct {
@@ -282,4 +332,19 @@ const tests = struct {
         .{ .dir = "object/v10" },
         .{ .dir = "string" },
     };
+};
+
+const Steps = struct {
+    check: *std.Build.Step,
+    docs: *std.Build.Step,
+    deps_js: *std.Build.Step,
+    fmt: *std.Build.Step,
+    tests: *std.Build.Step,
+    test_bun: *std.Build.Step,
+    test_ci: *std.Build.Step,
+    test_deno: *std.Build.Step,
+    test_node: *std.Build.Step,
+    test_zig: *std.Build.Step,
+    typecheck: *std.Build.Step,
+    symbols: *std.Build.Step,
 };

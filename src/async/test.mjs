@@ -32,6 +32,7 @@ describe("thread-safe functions", () => {
       "so call me, maybe",
     ];
 
+    /** @type {PromiseWithResolvers<void>} */
     const { promise, reject, resolve } = Promise.withResolvers();
 
     let idxMsg = 0;

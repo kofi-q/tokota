@@ -1,0 +1,44 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@std/assert@^1.0.10": "1.0.10",
+    "jsr:@std/internal@^1.0.5": "1.0.5",
+    "jsr:@std/testing@*": "1.0.9"
+  },
+  "jsr": {
+    "@std/assert@1.0.10": {
+      "integrity": "59b5cbac5bd55459a19045d95cc7c2ff787b4f8527c0dd195078ff6f9481fbb3"
+    },
+    "@std/internal@1.0.5": {
+      "integrity": "54a546004f769c1ac9e025abd15a76b6671ddc9687e2313b67376125650dc7ba"
+    },
+    "@std/testing@1.0.9": {
+      "integrity": "9bdd4ac07cb13e7594ac30e90f6ceef7254ac83a9aeaa089be0008f33aab5cd4",
+      "dependencies": [
+        "jsr:@std/assert",
+        "jsr:@std/internal"
+      ]
+    }
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@eslint/js@9.28.0",
+        "npm:@types/bun@1.2.15",
+        "npm:@types/deno@^2.3.0",
+        "npm:@types/eslint@9.6.1",
+        "npm:@types/node@^24.0.1",
+        "npm:@typescript-eslint/parser@8.34.0",
+        "npm:@typescript-eslint/types@8.34.0",
+        "npm:eslint-config-prettier@10.1.1",
+        "npm:eslint-plugin-perfectionist@4.14.0",
+        "npm:eslint-plugin-prettier@5.4.1",
+        "npm:eslint@9.28.0",
+        "npm:globals@16.2.0",
+        "npm:prettier@3.5.3",
+        "npm:typescript-eslint@8.34.0",
+        "npm:typescript@5.8.3"
+      ]
+    }
+  }
+}

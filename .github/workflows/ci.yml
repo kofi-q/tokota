@@ -45,9 +45,9 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Test - Zig
+      - name: Test - CI
         run: |
-          FORCE_COLOR=1 zig build test:zig
+          FORCE_COLOR=1 zig build test:ci
 
       - name: Test - Node
         run: |
