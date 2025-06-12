@@ -3,6 +3,9 @@ const std = @import("std");
 const Addon = @import("../Addon.zig");
 const tokota = @import("../tokota.zig");
 
+pub const def_path = "_build/windows/node.def";
+pub const def_name = "node.def";
+
 /// Adds a build step for emitting a `node.def` module-definition file for
 /// generating a stub DLL to link against.
 ///
@@ -26,15 +29,12 @@ pub fn updateSource(
 
     const emit = b.addSystemCommand(&.{"node"});
     emit.addFileArg(b.path("_build/windows/emit_node_def.js"));
+    emit.addFileInput(b.path("_build/windows/emit_node_def.node"));
     emit.step.dependOn(&addon.install.step);
 
     const node_def = b.addUpdateSourceFiles();
+    _ = node_def.addCopyFileToSource(emit.captureStdOut(), def_path);
     node_def.step.dependOn(&emit.step);
-
-    const filename = "_build/windows/node.def";
-    _ = node_def.addCopyFileToSource(emit.captureStdOut(), filename);
-
-    b.addNamedLazyPath("node.def", b.path(filename));
 
     return node_def;
 }
@@ -73,7 +73,7 @@ pub fn build(
         "-D",            "node.exe",
     });
 
-    create_dll.addPrefixedFileArg("-d", _dep_tokota.namedLazyPath("node.def"));
+    create_dll.addPrefixedFileArg("-d", _dep_tokota.namedLazyPath(def_name));
     const output_path = create_dll.addPrefixedOutputFileArg("-l", "node.lib");
 
     return .{ create_dll, output_path };

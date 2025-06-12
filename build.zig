@@ -37,6 +37,9 @@ pub fn build(b: *std.Build) void {
 
     var dep_tokota_internal = std.Build.Dependency{ .builder = b };
 
+    b.addNamedLazyPath(node_dll.def_name, b.path(node_dll.def_path));
+    b.addNamedLazyPath(node_stub_so.src_name, b.path(node_stub_so.src_path));
+
     // [TODO] Add CI checks for up-to-date stubs.
     step_symbols.dependOn(
         &node_dll.updateSource(b, mode, &dep_tokota_internal).step,

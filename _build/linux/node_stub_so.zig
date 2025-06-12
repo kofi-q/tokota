@@ -3,6 +3,9 @@ const std = @import("std");
 const Addon = @import("../Addon.zig");
 const tokota = @import("../tokota.zig");
 
+pub const src_path = "_build/linux/libnode.zig";
+pub const src_name = "libnode.zig";
+
 pub fn updateSource(
     b: *std.Build,
     mode: std.builtin.OptimizeMode,
@@ -21,15 +24,12 @@ pub fn updateSource(
 
     const emit = b.addSystemCommand(&.{"node"});
     emit.addFileArg(b.path("_build/linux/emit_libnode_source.js"));
+    emit.addFileInput(b.path("_build/linux/emit_libnode_source.node"));
     emit.step.dependOn(&addon.install.step);
 
     const libnode_zig = b.addUpdateSourceFiles();
+    _ = libnode_zig.addCopyFileToSource(emit.captureStdOut(), src_path);
     libnode_zig.step.dependOn(&emit.step);
-
-    const filename = "_build/linux/libnode.zig";
-    _ = libnode_zig.addCopyFileToSource(emit.captureStdOut(), filename);
-
-    b.addNamedLazyPath("libnode.zig", b.path(filename));
 
     return libnode_zig;
 }
@@ -52,7 +52,7 @@ pub fn build(
         .name = "node-stub",
         .root_module = b.createModule(.{
             .optimize = mode,
-            .root_source_file = _dep_tokota.namedLazyPath("libnode.zig"),
+            .root_source_file = _dep_tokota.namedLazyPath(src_name),
             .target = target,
         }),
     });
