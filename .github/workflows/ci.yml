@@ -25,9 +25,20 @@ jobs:
         run: |
           zvm install 0.14.1
 
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set Up PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
       - name: Set Up NodeJS
         uses: actions/setup-node@v4
         with:
+          cache: "pnpm"
           node-version: "24"
 
       - name: Install Bun
@@ -39,15 +50,7 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           deno-version: 2.3.3
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Set Up PNPM
-        run: |
-          corepack enable
+          cache: true
 
       - name: Test - CI
         run: |
@@ -84,19 +87,20 @@ jobs:
         run: |
           zvm install 0.14.1
 
-      - name: Set Up NodeJS
-        uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - name: Set Up PNPM
-        run: |
-          corepack enable
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Set Up NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
 
       - name: Registry Login
         run: |
