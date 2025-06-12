@@ -45,21 +45,25 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Set Up PNPM
+        run: |
+          corepack enable
+
       - name: Test - CI
         run: |
-          FORCE_COLOR=1 zig build test:ci
+          FORCE_COLOR=1 zig build test:ci --summary all
 
       - name: Test - Node
         run: |
-          FORCE_COLOR=1 zig build test:node
+          FORCE_COLOR=1 zig build test:node --summary all
 
       - name: Test - Bun
         run: |
-          FORCE_COLOR=1 zig build test:bun
+          FORCE_COLOR=1 zig build test:bun --summary all
 
       - name: Test - Deno
         run: |
-          FORCE_COLOR=1 zig build test:deno
+          FORCE_COLOR=1 zig build test:deno --summary all
 
   npm-example-test:
     runs-on: ubuntu-latest
@@ -85,14 +89,14 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Set Up PNPM
-        run: |
-          corepack enable
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
+      - name: Set Up PNPM
+        run: |
+          corepack enable
 
       - name: Registry Login
         run: |
@@ -103,7 +107,7 @@ jobs:
       - name: Test
         run: |
           cd examples/npm
-          FORCE_COLOR=1 zig build e2e
+          FORCE_COLOR=1 zig build e2e --summary all
 
   publish-docs:
     runs-on: ubuntu-latest
@@ -126,7 +130,7 @@ jobs:
 
       - name: Build Docs
         run: |
-          zig build docs
+          zig build docs --summary all
 
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
