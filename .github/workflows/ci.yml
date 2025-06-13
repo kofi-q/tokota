@@ -38,7 +38,6 @@ jobs:
       - name: Set Up NodeJS
         uses: actions/setup-node@v4
         with:
-          cache: "pnpm"
           node-version: "24"
 
       - name: Install Bun
@@ -115,7 +114,6 @@ jobs:
   publish-docs:
     runs-on: ubuntu-latest
     if: github.ref_name == 'main'
-    needs: [lib-build-and-test, npm-example-test]
     steps:
       - name: Install ZVM
         run: |
