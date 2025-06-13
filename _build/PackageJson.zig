@@ -43,10 +43,7 @@ engines: ?struct {
 
 publishConfig: ?PublishConfig = null,
 
-repository: ?struct {
-    type: []const u8,
-    url: []const u8,
-} = null,
+repository: ?Repository = null,
 
 bugs: ?struct {
     url: []const u8,
@@ -142,6 +139,12 @@ pub const License = union(enum) {
             inline else => @tagName(self),
         }});
     }
+};
+
+pub const Repository = struct {
+    directory: ?[]const u8 = null,
+    type: ?[]const u8 = null,
+    url: ?[]const u8 = null,
 };
 
 pub const PublishConfig = struct {

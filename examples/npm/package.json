@@ -29,6 +29,10 @@
     "access": "public",
     "registry": "http://localhost:4873"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kofi-q/tokota.git"
+  },
   "devDependencies": {
     "typescript": "5.8.3"
   }

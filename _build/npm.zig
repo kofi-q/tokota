@@ -155,6 +155,7 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
             .main = if (parsed.main) |f| b.path(f) else null,
             .name = parsed.name,
             .publish_config = parsed.publishConfig,
+            .repository = parsed.repository,
             .type = parsed.type,
             .types = if (parsed.types) |f| b.path(f) else null,
             .version = parsed.version.sem_ver,
@@ -214,6 +215,7 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
             .main = addon.basename,
 
             .publishConfig = pkg_json_opts.publish_config,
+            .repository = pkg_json_opts.repository,
 
             .os = &.{nodeOs(target.result)},
             .cpu = &.{nodeCpu(target.result)},
@@ -593,6 +595,7 @@ const PackageJsonOpts = struct {
     main: ?std.Build.LazyPath = null,
     name: []const u8,
     publish_config: ?PackageJson.PublishConfig = null,
+    repository: ?PackageJson.Repository = null,
     type: ?PackageJson.Type = null,
     types: ?std.Build.LazyPath = null,
     version: std.SemanticVersion,
