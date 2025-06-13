@@ -146,6 +146,7 @@ pub const License = union(enum) {
 
 pub const PublishConfig = struct {
     access: ?enum { public, restricted } = null,
+    provenance: ?bool = null,
     registry: ?[]const u8 = null,
 };
 
