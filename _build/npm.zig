@@ -136,6 +136,7 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
             opts.package_json,
         );
         const pkg_json_opts = PackageJsonOpts{
+            .author = parsed.author,
             .description = parsed.description,
             .files = paths: {
                 var lazy_paths = ArrayList([]const u8).initCapacity(
@@ -150,6 +151,7 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
 
                 break :paths lazy_paths.items;
             },
+            .homepage = parsed.homepage,
             .keywords = parsed.keywords,
             .license = parsed.license,
             .main = if (parsed.main) |f| b.path(f) else null,
@@ -209,6 +211,8 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
             .name = pkg_name,
             .version = .{ .sem_ver = pkg_json_opts.version },
             .description = pkg_json_opts.description,
+            .author = pkg_json_opts.author,
+            .homepage = pkg_json_opts.homepage,
             .license = pkg_json_opts.license,
             .keywords = pkg_json_opts.keywords,
 
@@ -588,8 +592,10 @@ pub const TargetSpecificFlag = union(enum) {
 const ParsedJsonValue = std.json.Parsed(std.json.Value);
 
 const PackageJsonOpts = struct {
+    author: ?[]const u8 = null,
     description: ?[]const u8 = null,
     files: []const []const u8 = &.{},
+    homepage: ?[]const u8 = null,
     keywords: ?[]const []const u8 = null,
     license: ?PackageJson.License = null,
     main: ?std.Build.LazyPath = null,

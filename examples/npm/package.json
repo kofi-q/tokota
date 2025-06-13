@@ -8,6 +8,7 @@
     "zig"
   ],
   "author": "Someone W. Codes <someone@example.com>",
+  "homepage": "https://example.com",
   "license": "MIT",
   "main": "build/index.js",
   "types": "build/index.d.ts",
