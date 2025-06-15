@@ -48,7 +48,7 @@ jobs:
       - name: Install Deno
         uses: denoland/setup-deno@v2
         with:
-          deno-version: 2.3.3
+          deno-version-file: ".dvmrc"
 
       - name: Test - CI
         run: |
