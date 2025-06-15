@@ -38,12 +38,12 @@ jobs:
       - name: Set Up NodeJS
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version-file: ".nvmrc"
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.2.15
+          bun-version-file: ".bun-version"
 
       - name: Install Deno
         uses: denoland/setup-deno@v2

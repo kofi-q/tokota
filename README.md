@@ -65,7 +65,7 @@ Tokota requires Zig version `v0.14.1` or later (tested up to the version in [`.z
 
 ### NodeJS
 
-`› Tested with v16.0.0 - v24.0.1`
+`› Tested with v16.0.0 - v24.2.0`
 
 The minimum (and default) Node-API version supported by Tokota is [`8`](https://nodejs.org/docs/latest/api/n-api.html#node-api-version-matrix). In theory, based on the Node-API documentation, this enables building addons compatible with the following NodeJS versions:
 
@@ -81,7 +81,7 @@ However, I've had issues with versions prior to **`v16.0.0`** (most prohibitivel
 
 ### Bun
 
-`› Tested with v1.2.15`
+`› Last tested with v1.2.15`
 
 Bun provides an implementation of the Node-API.
 
@@ -91,7 +91,7 @@ Bun provides an implementation of the Node-API.
 
 ### Deno
 
-`› Tested with v2.3.3`
+`› Last tested with v2.3.3`
 
 Deno also provides a work-in-progress (at the time of writing) Node-API implementation.
 
