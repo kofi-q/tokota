@@ -112,7 +112,6 @@ pub const Async = struct {
     pub const ExecuteT = mod_work.ExecuteT;
     pub const Resource = @import("async/Resource.zig");
     pub const Task = mod_task.Task;
-    pub const TaskManaged = mod_task.TaskManaged;
     pub const Worker = mod_work.Worker;
 };
 

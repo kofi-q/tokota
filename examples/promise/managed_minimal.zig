@@ -1,31 +1,41 @@
 const ArenaAllocator = @import("std").heap.ArenaAllocator;
-const json = @import("std").json;
-const std = @import("std");
 const cwd = @import("std").fs.cwd;
+const json = @import("std").json;
+const smp_allocator = std.heap.smp_allocator;
+const std = @import("std");
 
 const t = @import("tokota");
 
 const path_todos = "../_data/todos.json";
 
 pub fn todoTotals(call: t.Call) !t.Promise {
+    const runner = try smp_allocator.create(Runner);
+    runner.* = .{ .task = undefined };
+
     // Schedule an async task via Node's worker thread pool and return the
     // resulting `Promise` to the client.
-    return call.env.asyncTaskManaged(std.heap.smp_allocator, Task, .{});
+    return call.env.asyncTask(runner, &runner.task);
 }
 
-/// Exposes async callbacks required by `Env.asyncTaskManaged()` for executing
+/// Exposes async callbacks required by `Env.asyncTask()` for executing
 /// and settling the `Promise`.
-const Task = struct {
+const Runner = struct {
+    task: t.Async.Task(*@This()),
+
     const Todo = struct { completed: bool };
     const Totals = struct { completed: u32, pending: u32 };
 
-    /// The `execute()` callback will be invoked from a Node worker thread with
-    /// the arguments given to `Env.asyncTaskManaged()`, if any.
-    pub fn execute(arena: *ArenaAllocator) !Totals {
+    /// The required `execute()` callback will be invoked from a Node worker
+    /// thread. Since the optional `complete()` callback is omitted here, the
+    /// return value of the `execute()` method will be used to resolve the
+    /// JS promise.
+    ///
+    /// If an error is returned here, the JS promise will be rejected with a JS
+    /// `Error` containing a `code` field set to the error name.
+    pub fn execute(_: *Runner) !Totals {
+        var arena = std.heap.ArenaAllocator.init(smp_allocator);
+        defer arena.deinit();
 
-        // An arena allocator, derived from the allocator passed to
-        // `Env.asyncTaskManaged()`, is provided for heap allocations that may be
-        // necessary for the task. It is reset once the `Promise` is settled.
         const allo = arena.allocator();
         const raw_json = try cwd().readFileAlloc(allo, path_todos, 26 * 1024);
 
@@ -39,5 +49,13 @@ const Task = struct {
         totals.pending = @intCast(todos.len - totals.completed);
 
         return totals;
+    }
+
+    /// The optional `cleanUp()` callback is invoked from the main JS thread
+    /// after all other executor methods have run and after the `Promise` is
+    /// settled, but *before* execution is returned to JS. Enables any necessary
+    /// cleanup of the async task.
+    pub fn cleanUp(self: *Runner, _: t.Env) !void {
+        smp_allocator.destroy(self);
     }
 };

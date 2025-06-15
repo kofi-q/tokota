@@ -51,7 +51,6 @@ const NapiEnv = opaque {
     pub const arrayFrom = ext_array.arrayFrom;
     pub const arrayN = ext_array.arrayN;
     pub const asyncTask = ext_async.asyncTask;
-    pub const asyncTaskManaged = ext_async.asyncTaskManaged;
     pub const asyncWorker = ext_async.asyncWorker;
     pub const asyncWorkerT = ext_async.asyncWorkerT;
     pub const bigInt = ext_number.bigInt;

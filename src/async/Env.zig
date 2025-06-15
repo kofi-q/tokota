@@ -93,7 +93,7 @@ const wrapExecuteT = @import("worker.zig").wrapExecuteT;
 /// const Generator = struct {
 ///     buf: [255]u8,
 ///     len: u8,
-///     task: t.Task(*@This()),
+///     task: t.Async.Task(*@This()),
 ///
 ///     pub fn execute(self: *Generator) ![]u8 {
 ///         if (self.len < 64) return error.NeedMoreBytes;
@@ -158,160 +158,6 @@ pub fn asyncTask(
     task.* = .{
         .deferred = deferred,
         .executor = executor_ptr,
-        .work = async_work.?,
-    };
-    errdefer task.work.delete(self) catch |err| self.throwOrPanic(.{
-        .code = @errorName(err),
-        .msg = "Async task cleanup failed",
-    });
-
-    try task.work.schedule(self);
-
-    return prom;
-}
-
-/// Schedules a task to be run in a NodeJS worker thread. Returns a JS `Promise`
-/// that is settled when the task completes.
-///
-/// `Executor` is a Zig struct type containing the following function decls:
-///
-/// #### execute `[ Required ]`
-/// ```zig
-/// pub fn execute(*std.heap.ArenaAllocator, ...) anyerror!T;
-/// ```
-/// Runs on a worker thread. Called with an arena allocator derived from `allo`
-/// as the first argument and `args` as the rest and can return any value
-/// and/or error. Return values are forwarded to the optional `complete()`
-/// method on the main thread - if no `complete()` method is specified, the
-/// `Promise` is resolved with the return value of `execute()`, converted to a
-/// corresponding JS value, if supported. Errors returned here will cause the
-/// promise to be rejected. Rejection values can be customised via an
-/// `errConvert` method (see below). The arena is de-initialized once the
-/// promise is settled, before execution is returned to JS.
-///
-/// #### complete `[ Optional ]`
-/// ```zig
-/// pub fn complete(*std.heap.ArenaAllocator, Env, T) anyerror!R;
-/// ```
-/// Runs on the main JS thread after `execute()`. Called with the return value
-/// of `execute()` as the last argument, enabling optional conversion of the
-/// result of `execute` to a more appropriate type for JS. Any return value will
-/// be used to resolve the JS `Promise`. If non-`Val`, the return value will
-/// first be converted to a corresponding JS `Val`, if supported.
-/// Errors returned here will cause the promise to be rejected. Rejection
-/// values can be customised via an `errConvert` method (see below).
-///
-/// #### errConvert `[ Optional ]`
-/// ```zig
-/// pub fn errConvert(*std.heap.ArenaAllocator, Env, anyerror) anyerror!void;
-/// ```
-/// Runs on the main JS thread after `complete()` or `execute()`, whichever
-/// returns an error first. Called with `executor_ptr` as the first argument and
-/// the error from `complete()` or `execute()` as the last argument, enabling
-/// optional conversion of the error to a JS `Val`, or a value that can be
-/// converted to `Val`. The `Promise` is then rejected with the return value.
-/// If another Zig `error` is returned, the promise is rejected with a JS
-/// `Error` with a code field set to the error name.
-///
-///
-/// #### cleanUp `[ Optional ]`
-/// ```zig
-/// pub fn cleanUp(*std.heap.ArenaAllocator, Env) anyerror!void;
-/// ```
-/// Runs on the main JS thread after all other executor methods have run and
-/// after the `Promise` is settled, but *before* execution is returned to JS.
-/// Enables optional cleanup of the async task, if needed.
-///
-/// ## Example
-/// ```zig
-/// //! addon.zig
-///
-/// const std = @import("std");
-/// const t = @import("tokota");
-///
-/// comptime {
-///     t.exportModule(@This());
-/// }
-///
-/// pub fn todos(call: t.Call, limit: u32) !t.Promise {
-///     return call.env.asyncTaskManaged(std.heap.smp_allocator, TaskFetch, .{
-///         limit,
-///     });
-/// }
-///
-/// const Todo = struct {
-///     completed: bool,
-///     id: u32,
-///     title: [:0]const u8,
-/// };
-///
-/// const TaskFetch = struct {
-///     pub fn execute(arena: *std.heap.ArenaAllocator, limit: u32) ![]Todo {
-///         if (limit > 20) return error.TooManyRequested;
-///
-///         const raw_json = try fetchTodos();
-///         const items = try std.json
-///             .parseFromSliceLeaky([]Todo, arena.allocator(), raw_json, .{});
-///
-///         return items[0..@min(limit, items.len)];
-///     }
-///
-///     pub fn errConvert(env: t.Env, err: anyerror) !t.Val {
-///         return switch (err) {
-///             error.TooManyRequested => env.err("Too much for one day.", {}),
-///             else => env.err("Something went wrong.", err),
-///         };
-///     }
-/// };
-/// ```
-///
-/// ```js
-/// // main.js
-///
-/// const addon = require("./addon.node");
-///
-/// addon
-///   .todos(10)
-///   .then(todos => console.log("resolved:", todos))
-///   .catch(err => console.error("rejected:", err));
-/// ```
-/// More examples available in `src/async/test.zig` and `examples/promise`.
-///
-///
-/// - https://nodejs.org/docs/latest/api/n-api.html#napi_create_async_work
-/// - https://nodejs.org/docs/latest/api/n-api.html#napi_create_promise
-pub fn asyncTaskManaged(
-    self: Env,
-    allo: std.mem.Allocator,
-    comptime Executor: type,
-    args: anytype,
-) !Promise {
-    const Task = Async.TaskManaged(Executor, @TypeOf(args));
-
-    var arena = std.heap.ArenaAllocator.init(allo);
-    errdefer arena.deinit();
-
-    const allo_arena = arena.allocator();
-    const task = try allo_arena.create(Task);
-
-    const prom, const deferred = try self.promise();
-
-    var async_work: ?Async.Worker = undefined;
-    try n.napi_create_async_work(
-        self,
-        prom.ptr,
-        try Async.Resource.default.nameVal(self),
-        @ptrCast(&Task.execute),
-        @ptrCast(&Task.complete),
-        task,
-        &async_work,
-    ).check();
-
-    task.* = .{
-        .arena = arena,
-        .args = args,
-        .deferred = deferred,
-        .result = undefined,
         .work = async_work.?,
     };
     errdefer task.work.delete(self) catch |err| self.throwOrPanic(.{
@@ -410,8 +256,8 @@ pub fn asyncWorkerT(
 ///
 /// > #### ⚠ NOTE
 /// > `Deferred` methods must be invoked on the main thread. See
-/// `asyncTask()` or `asyncTaskManaged()` for examples for convenience wrappers
-///  around `Promise`s and Node async workers.
+/// `asyncTask()` for examples for convenience wrappers around `Promise`s and
+/// Node async workers.
 ///
 /// https://nodejs.org/docs/latest/api/n-api.html#napi_create_promise
 pub fn promise(self: Env) !(struct { Promise, Deferred }) {
