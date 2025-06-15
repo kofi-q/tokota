@@ -3,11 +3,6 @@ run-name: ${{ github.ref }} - Commit Checks
 
 on: push
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -110,37 +105,3 @@ jobs:
         run: |
           cd examples/npm
           FORCE_COLOR=1 zig build e2e --summary all
-
-  publish-docs:
-    runs-on: ubuntu-latest
-    if: github.ref_name == 'main'
-    steps:
-      - name: Install ZVM
-        run: |
-          curl https://raw.githubusercontent.com/tristanisham/zvm/master/install.sh | bash
-          echo PATH="~/.zvm/self:~/.zvm/bin:$PATH" >> "$GITHUB_ENV"
-
-      - name: Install Zig
-        run: |
-          zvm install master
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Build Docs
-        run: |
-          zig build docs --summary all
-
-      - name: Setup GitHub Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: "./zig-out/docs"
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
