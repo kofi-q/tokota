@@ -53,6 +53,8 @@ pub fn External(comptime PtrType: type) type {
         pub fn fromJs(env: Env, arg: Val) !@This() {
             const ptr = arg.external(PtrType, env) catch |err| {
                 return switch (err) {
+                    // [TODO] Should this disambiguate between non-native
+                    // objects and native objects with mismatched tags?
                     Err.InvalidArg => error.NativeObjectExpected,
                     else => err,
                 };

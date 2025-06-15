@@ -78,22 +78,6 @@ const Object = @This();
 ptr: Val,
 env: Env,
 
-pub fn Of(comptime T: type) type {
-    return struct {
-        source: Object,
-        value: T,
-
-        pub fn fromJs(env: Env, val: Val) !@This() {
-            const source = val.object(env);
-            return .{ .source = source, .value = try source.to(T) };
-        }
-
-        pub fn toJs(self: @This(), env: Env) !Val {
-            return env.infer(self.value);
-        }
-    };
-}
-
 /// Holds a unique, 128-bit integer value for tagging JS objects in order to
 /// enable safer type checking later on. This is most useful in conjunction with
 /// `Object.wrap()`/`Object.unwrap()` and `Env.external()`/`Val.external()`, to

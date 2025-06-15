@@ -43,14 +43,18 @@
     "doctests",
     "encabulate",
     "Encabulation",
+    "freference",
     "libcpp",
     "napi",
     "npmignore",
     "orelse",
     "pkgs",
     "Tokota",
+    "tsfn",
+    "unref",
     "usingnamespace",
-    "usize"
+    "usize",
+    "uuidgen"
   ],
   "cSpell.enabled": true
 }
