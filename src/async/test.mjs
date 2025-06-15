@@ -2,8 +2,9 @@ import assert from "node:assert";
 import { createRequire } from "node:module";
 
 import { describe, RUNTIME, test } from "../testing/runner.mjs";
-const { AsyncTask, AsyncTaskManaged, AsyncWorker, Promises, ThreadsafeFns } =
-  createRequire(import.meta.url)("./test.addon");
+const { AsyncTask, AsyncWorker, Promises, ThreadsafeFns } = createRequire(
+  import.meta.url,
+)("./test.addon");
 
 describe("promises", () => {
   test("resolve", async () => {
@@ -159,63 +160,6 @@ describe("AsyncTask", () => {
     const result = AsyncTask.scheduleWithErrConvert(onCleanup);
     assert(result instanceof Promise);
     await assert.rejects(async () => await result, /SorryDave/);
-
-    switch (RUNTIME) {
-      case "deno": {
-        console.error(
-          "🚨 [SKIP] Deno: napi_reject_deferred returns control to JS " +
-            "immediately, preventing native async task cleanup.",
-        );
-        assert(!cleanedUp);
-        break;
-      }
-
-      default: {
-        assert(cleanedUp);
-        break;
-      }
-    }
-  });
-});
-
-describe("AsyncTaskManaged", () => {
-  test("with `execute` method only", async () => {
-    const result = AsyncTaskManaged.scheduleExecuteOnly(3.142);
-    assert(result instanceof Promise);
-    assert.equal(await result, 3.142);
-  });
-
-  test("with `complete` method", async () => {
-    const result = AsyncTaskManaged.scheduleWithComplete(3.142);
-    assert(result instanceof Promise);
-    assert.equal(await result, "3.142");
-  });
-
-  test("with `cleanup` method", async () => {
-    let cleanedUp = false;
-
-    /** @param {boolean} res */
-    function onCleanup(res) {
-      cleanedUp = res;
-    }
-
-    const result = AsyncTaskManaged.scheduleWithCleanup(3.142, onCleanup);
-    assert(result instanceof Promise);
-    assert.equal(await result, 3.142);
-    assert(cleanedUp);
-  });
-
-  test("with `errConvert` method", async () => {
-    let cleanedUp = false;
-
-    /** @param {boolean} res */
-    function onCleanup(res) {
-      cleanedUp = res;
-    }
-
-    const result = AsyncTaskManaged.scheduleWithErrConvert(onCleanup);
-    assert(result instanceof Promise);
-    await assert.rejects(async () => await result, /WrongWay/);
 
     switch (RUNTIME) {
       case "deno": {

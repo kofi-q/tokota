@@ -12,7 +12,6 @@ const Val = @import("../root.zig").Val;
 /// Can be:
 /// - Newly allocated via:
 ///   - `Env.asyncTask()`
-///   - `Env.asyncTaskManaged()`
 ///   - `Env.promise()`
 ///   - `Env.promiseReject()`
 ///   - `Env.promiseResolve()`
@@ -167,9 +166,8 @@ pub const Promise = struct {
 /// `Fn.threadsafeFn()` for ways to schedule callbacks for execution on the main
 /// thread.
 ///
-/// For short-lived, asynchronous tasks, `Env.asyncTask()` or
-/// `Env.asyncTaskManaged()` may be convenient for scheduling work on NodeJS
-/// worker threads.
+/// For short-lived, asynchronous tasks, `Env.asyncTask()` or may be convenient
+/// for scheduling work on NodeJS worker threads.
 ///
 /// https://nodejs.org/docs/latest/api/n-api.html#promises
 pub const Deferred = *const NapiDeferred;
