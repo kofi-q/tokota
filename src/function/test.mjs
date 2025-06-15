@@ -24,8 +24,10 @@ describe("functions", () => {
   test("call - single arg", () => {
     /**
      * @param {string} input
+     * @this {unknown}
      */
     function reverb(input) {
+      assert.strictEqual(this, globalThis);
       return `${input}...${input.substring(0, 2)}...${input.substring(0, 1)}`;
     }
 
@@ -37,8 +39,10 @@ describe("functions", () => {
     /**
      * @param {string} a
      * @param {string} b
+     * @this {unknown}
      */
     function concat(a, b) {
+      assert.strictEqual(this, globalThis);
       return `${a}: ${b}`;
     }
 
@@ -99,8 +103,10 @@ describe("functions", () => {
       /**
        * @param {string} a
        * @param {string} b
+       * @this {unknown}
        */
       concat(a, b) {
+        assert.strictEqual(this, obj);
         return `${a}${this.separator}${b}`;
       }
     })();

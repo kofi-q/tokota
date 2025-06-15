@@ -112,7 +112,7 @@ pub fn call(self: Fn, arg_or_args: anytype) !Val {
     var result: ?Val = null;
     try n.napi_call_function(
         self.env,
-        try self.env.undefinedVal(),
+        (try self.env.global()).ptr,
         self.ptr,
         args.len,
         args.ptr,
