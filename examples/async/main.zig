@@ -11,5 +11,5 @@ comptime {
     tokota.exportModule(@This());
 }
 
-pub const todoTotals = @import("managed_minimal.zig").todoTotals;
-pub const todosForUser = @import("managed_extended.zig").todosForUser;
+pub const todoTotals = @import("minimal.zig").todoTotals;
+pub const todosForUser = @import("extended.zig").todosForUser;

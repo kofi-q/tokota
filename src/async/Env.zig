@@ -131,8 +131,11 @@ const wrapExecuteT = @import("worker.zig").wrapExecuteT;
 ///   .catch(err => console.error("rejected:", err));
 /// ```
 ///
-/// More examples available in `src/async/test.zig`.
+/// More examples available in:
+/// - [./examples/async](https://github.com/kofi-q/tokota/blob/main/examples/main.zig)
+/// - [./src/async/test.zig](https://github.com/kofi-q/tokota/blob/main/src/async/test.zig)
 ///
+/// Refs:
 /// - https://nodejs.org/docs/latest/api/n-api.html#napi_create_async_work
 /// - https://nodejs.org/docs/latest/api/n-api.html#napi_create_promise
 pub fn asyncTask(

@@ -295,12 +295,12 @@ const examples = struct {
 
     const configs = [_]Config{
         .{ .name = "add" },
+        .{ .name = "async" },
         .{ .name = "class" },
         .{ .name = "compile_errors" },
         .{ .name = "custom_arg" },
         .{ .name = "hello" },
         .{ .name = "iterator" },
-        .{ .name = "promise" },
         .{ .name = "stream", .link_libc = true },
     };
 };
