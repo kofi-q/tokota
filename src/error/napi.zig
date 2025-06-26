@@ -60,10 +60,7 @@ pub const Status = enum(c_int) {
             .string_expected => return t.Err.StringExpected,
             .would_deadlock => return t.Err.WouldDeadlock,
 
-            else => {
-                t.log.err("Unknown Node-API error status code: {}\n", .{self});
-                return t.Err.UnknownNapiError;
-            },
+            else => return t.Err.UnknownNapiError,
         }
     }
 };
