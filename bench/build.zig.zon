@@ -1,0 +1,20 @@
+.{
+    .name = .bench,
+    .version = "0.0.0",
+    .fingerprint = 0x66d8e3257dc6291e,
+    .minimum_zig_version = "0.14.1",
+    .dependencies = .{
+        .napi_cpp = .{
+            .url = "git+https://github.com/nodejs/node-addon-api.git?ref=v8.4.0#a6213bb9ac9e13f8398431bcf077035a32780e6a",
+            .hash = "N-V-__8AAB0dFQBL0NSpsyPolKPJGjyCmfSTQ7Km5wrRQpb7",
+        },
+        .napi_headers = .{
+            .url = "git+https://github.com/nodejs/node-api-headers.git?ref=v1.5.0#d46edabd5bbacc08393578eb19fc2eba7021b597",
+            .hash = "N-V-__8AAASNAQA0UI0mvQk4LyFEhdFuFBPgH8HSokdFFpnz",
+        },
+        .tokota = .{
+            .path = "../",
+        },
+    },
+    .paths = .{""},
+}
