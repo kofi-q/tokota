@@ -81,7 +81,7 @@ However, I've had issues with versions prior to **`v16.0.0`** (most prohibitivel
 
 ### Bun
 
-`› Last tested with v1.2.15`
+`› Last tested with v1.2.17`
 
 Bun provides an implementation of the Node-API.
 
@@ -91,7 +91,7 @@ Bun provides an implementation of the Node-API.
 
 ### Deno
 
-`› Last tested with v2.3.3`
+`› Last tested with v2.3.7`
 
 Deno also provides a work-in-progress (at the time of writing) Node-API implementation.
 
