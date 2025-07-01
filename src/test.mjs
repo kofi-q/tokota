@@ -464,19 +464,6 @@ describe("arg & return-type inference", () => {
     assert.equal(PuppyShelter.unexportedFn, undefined);
 
     assert.equal(api.returnTokotaApiOptional(), undefined);
-
-    switch (RUNTIME) {
-      case "deno":
-        console.error(
-          "🚨 [SKIP] Deno: napi_add_finalizer seems to be a no-op. Either " +
-            "unimplemented, or GC's not running in the span of the tests",
-        );
-        PuppyShelter.finalizeDeno();
-        break;
-
-      default:
-        break;
-    }
   });
 
   test("struct instance -> object with copied fields", () => {

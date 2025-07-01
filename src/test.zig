@@ -22,6 +22,13 @@ fn moduleInit(_: t.Env, exports: t.Val) !t.Val {
     return exports;
 }
 
+fn moduleDeinit() !void {
+    return switch (dba.deinit()) {
+        .ok => {},
+        .leak => t.panic("Memory leak detected", null),
+    };
+}
+
 pub fn nodeVersion(call: t.Call) !*const t.NodeVersion {
     return call.env.nodeVersion();
 }
@@ -158,16 +165,13 @@ fn closureFn(call: t.CallT(*ClosureData)) !?*ClosureData {
     return call.data();
 }
 
-fn closureDeinit(data: *ClosureData, _: t.Env) !void {
+fn closureDeinit(data: *ClosureData, env: t.Env) !void {
     dba.allocator().destroy(data);
 
     // Looks like this finalizer is the last cleanup to run, regardless of the
-    // order in which cleanups are declared, so doing the memory leak check here
-    // instead of in a top-level `Env.addCleanup()`.
-    return switch (dba.deinit()) {
-        .ok => {},
-        .leak => t.panic("Memory leak detected", null),
-    };
+    // order in which cleanups are declared, so scheduling the memory leak
+    // check here instead of in a top-level `Env.addCleanup()`.
+    _ = try env.addCleanup({}, moduleDeinit);
 }
 
 pub fn returnBuffer(buffer: t.Buffer) t.Buffer {
@@ -322,10 +326,6 @@ const PuppyApiWithData = t.Api([*:0]const u8, struct {
     pub fn hasAttachedData(call: Call) !bool {
         const data = try call.data();
         return data != null;
-    }
-
-    pub fn finalizeDeno(call: Call) !void {
-        try deinitApiData(try attachedData(call), call.env);
     }
 
     fn unexportedFn(call: Call) void {
