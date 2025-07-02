@@ -4,8 +4,7 @@ import path from "node:path";
 const argOne = process.argv[0];
 assert(typeof argOne === "string");
 
-const basename = path.basename(argOne);
-const RUNTIME = basename.substring(-path.extname(basename).length);
+const RUNTIME = path.basename(argOne, path.extname(argOne));
 
 let runnerPath = "";
 switch (RUNTIME) {
