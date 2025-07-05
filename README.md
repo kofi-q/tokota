@@ -91,7 +91,7 @@ Bun provides an implementation of the Node-API.
 
 ### Deno
 
-`› Last tested with v2.3.7`
+`› Last tested with v2.4.0`
 
 Deno also provides a work-in-progress (at the time of writing) Node-API implementation.
 
