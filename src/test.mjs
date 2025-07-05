@@ -187,32 +187,11 @@ describe("arg & return-type inference", () => {
     assert.throws(() => api.returnArrayBuffer({}), /ArrayBufferExpected/);
 
     const u8Array = Uint8Array.of(0xfa, 0xce);
-    switch (RUNTIME) {
-      case "bun": {
-        console.error(
-          "🚨 [SKIP] Bun: napi_get_arraybuffer_info returns no error for " +
-            "TypedArray/DataView inputs",
-        );
-
-        assert.doesNotThrow(() => api.returnArrayBuffer(u8Array));
-        assert.doesNotThrow(() =>
-          api.returnArrayBuffer(new DataView(u8Array.buffer)),
-        );
-
-        break;
-      }
-
-      default: {
-        assert.throws(
-          () => api.returnArrayBuffer(u8Array),
-          /ArrayBufferExpected/,
-        );
-        assert.throws(
-          () => api.returnArrayBuffer(new DataView(u8Array.buffer)),
-          /ArrayBufferExpected/,
-        );
-      }
-    }
+    assert.throws(() => api.returnArrayBuffer(u8Array), /ArrayBufferExpected/);
+    assert.throws(
+      () => api.returnArrayBuffer(new DataView(u8Array.buffer)),
+      /ArrayBufferExpected/,
+    );
   });
 
   test("Buffer -> tokota.Buffer -> Buffer", () => {
@@ -391,9 +370,24 @@ describe("arg & return-type inference", () => {
     assert.throws(() => api.returnIntU128(-1n), /ExpectedUnsignedBigInt/);
 
     switch (RUNTIME) {
+      case "bun": {
+        console.error(
+          "🚨 [SKIP] Bun: napi_get_value_bigint_words - incorrect word count " +
+            "returned when buffer length specified.",
+        );
+
+        assert.doesNotThrow(
+          () => api.returnIntU128(api.U128_MAX + 1n),
+          /BigIntOverflow/,
+        );
+
+        break;
+      }
+
       case "deno": {
         console.error(
-          "🚨 [SKIP] Deno: Incorrect BigInt word count on overflow.",
+          "🚨 [SKIP] Deno: napi_get_value_bigint_words - incorrect word count " +
+            "returned when buffer length specified.",
         );
 
         assert.doesNotThrow(

@@ -130,9 +130,27 @@ describe("bigInts", () => {
     );
 
     switch (RUNTIME) {
+      case "bun": {
+        console.error(
+          "🚨 [SKIP] Bun: napi_get_value_bigint_words - incorrect word count " +
+            "returned when buffer length specified.",
+        );
+
+        assert.doesNotThrow(
+          () =>
+            BigInts.roundtripWordsU128(
+              0x1_00000000_00000000_00000000_00000000n,
+            ),
+          /BigIntOverflow/,
+        );
+
+        break;
+      }
+
       case "deno": {
         console.error(
-          "🚨 [SKIP] Deno: Incorrect BigInt word count on overflow.",
+          "🚨 [SKIP] Deno: napi_get_value_bigint_words - incorrect word count " +
+            "returned when buffer length specified.",
         );
 
         assert.doesNotThrow(
@@ -277,13 +295,55 @@ describe("bigInts", () => {
     );
 
     switch (RUNTIME) {
-      case "deno":
+      case "bun": {
         console.error(
-          "🚨 [SKIP] Deno: Incorrect BigInt word count on overflow.",
+          "🚨 [SKIP] Bun: napi_get_value_bigint_words - incorrect word count " +
+            "returned when buffer length specified.",
         );
-        break;
 
-      default:
+        assert.doesNotThrow(
+          () =>
+            BigInts.roundtripWordsBuf(
+              0x11_22_33_44_55_66_77_88_99_aa_bb_cc_dd_ee_ff_00_11n,
+            ),
+          /BigIntOverflow/,
+        );
+        assert.doesNotThrow(
+          () =>
+            BigInts.roundtripWordsBuf(
+              -0x11_22_33_44_55_66_77_88_99_aa_bb_cc_dd_ee_ff_00_11n,
+            ),
+          /BigIntOverflow/,
+        );
+
+        break;
+      }
+
+      case "deno": {
+        console.error(
+          "🚨 [SKIP] Deno: napi_get_value_bigint_words - incorrect word count " +
+            "returned when buffer length specified.",
+        );
+
+        assert.doesNotThrow(
+          () =>
+            BigInts.roundtripWordsBuf(
+              0x11_22_33_44_55_66_77_88_99_aa_bb_cc_dd_ee_ff_00_11n,
+            ),
+          /BigIntOverflow/,
+        );
+        assert.doesNotThrow(
+          () =>
+            BigInts.roundtripWordsBuf(
+              -0x11_22_33_44_55_66_77_88_99_aa_bb_cc_dd_ee_ff_00_11n,
+            ),
+          /BigIntOverflow/,
+        );
+
+        break;
+      }
+
+      default: {
         assert.throws(
           () =>
             BigInts.roundtripWordsBuf(
@@ -299,6 +359,7 @@ describe("bigInts", () => {
           /BigIntOverflow/,
         );
         break;
+      }
     }
   });
 });
