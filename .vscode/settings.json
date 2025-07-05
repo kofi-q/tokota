@@ -46,6 +46,7 @@
     "freference",
     "isize",
     "libcpp",
+    "memset",
     "mitata",
     "napi",
     "npmignore",

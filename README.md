@@ -81,7 +81,7 @@ However, I've had issues with versions prior to **`v16.0.0`** (most prohibitivel
 
 ### Bun
 
-`› Last tested with v1.2.17`
+`› Last tested with v1.2.18`
 
 Bun provides an implementation of the Node-API.
 

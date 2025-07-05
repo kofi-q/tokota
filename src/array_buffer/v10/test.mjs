@@ -16,21 +16,6 @@ describe("array_buffer/v10", () => {
       const arrayBuffer = new ArrayBuffer(8);
 
       switch (RUNTIME) {
-        case "bun": {
-          console.error(
-            "🚨 [SKIP] Bun: node_api_create_buffer_from_arraybuffer creates a " +
-              "Buffer with different backing data the original ArrayBuffer",
-          );
-
-          assert.deepEqual(
-            BuffersV10.fromArrayBuffer(arrayBuffer, [0xca, 0xfe, 0xf0, 0x0d]),
-            // Should break when this gets fixed:
-            Buffer.of(0x0, 0x0, 0x0, 0x0),
-          );
-
-          break;
-        }
-
         case "deno": {
           console.error(
             "🚨 [SKIP] Deno: node_api_create_buffer_from_arraybuffer " +
