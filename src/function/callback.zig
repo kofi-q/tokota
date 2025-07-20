@@ -61,7 +61,7 @@ pub fn napiCb(comptime impl: anytype, comptime opts: CbOptions) n.Callback {
     };
 
     return struct {
-        pub fn proxy(env: Env, info: n.CallInfo) callconv(.C) ?Val {
+        pub fn proxy(env: Env, info: n.CallInfo) callconv(.c) ?Val {
             var buf_err: [128]u8 = undefined;
 
             const call = CallResolved{ .env = env, .info = info };

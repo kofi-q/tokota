@@ -288,11 +288,11 @@ pub fn exportModuleWithInit(
     comptime init_fn: ?InitFn,
 ) void {
     const entry_points = struct {
-        fn apiVersion() callconv(.C) NapiVersion {
+        fn apiVersion() callconv(.c) NapiVersion {
             return options.napi_version;
         }
 
-        fn registerModule(env: Env, mod_js: Val) callconv(.C) ?Val {
+        fn registerModule(env: Env, mod_js: Val) callconv(.c) ?Val {
             const exports = defineExports(env, mod_js, mod) orelse return null;
 
             const override: ?Val = blk: {
