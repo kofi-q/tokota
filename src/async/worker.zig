@@ -65,7 +65,7 @@ pub fn ExecuteT(comptime Ctx: type) type {
 
 pub fn wrapExecute(comptime func: Execute) n.AsyncExecute {
     const Cb = struct {
-        fn proxy(env: Env, _: ?AnyPtr) callconv(.C) void {
+        fn proxy(env: Env, _: ?AnyPtr) callconv(.c) void {
             func() catch |err| switch (err) {
                 Err.PendingException => {},
                 else => env.throwOrPanic(.{
@@ -87,7 +87,7 @@ pub fn wrapExecuteT(
     comptime func: ExecuteT(Ctx),
 ) n.AsyncExecute {
     const Cb = struct {
-        fn proxy(env: Env, ctx: ?Ctx) callconv(.C) void {
+        fn proxy(env: Env, ctx: ?Ctx) callconv(.c) void {
             @call(.always_inline, func, .{ctx.?}) catch |err| switch (err) {
                 Err.PendingException => {},
                 else => env.throwOrPanic(.{
@@ -107,7 +107,7 @@ pub fn wrapExecuteT(
 
 pub fn wrapComplete(comptime func: Complete) n.AsyncComplete {
     const Cb = struct {
-        fn proxy(env: Env, status: n.Status, _: ?AnyPtr) callconv(.C) void {
+        fn proxy(env: Env, status: n.Status, _: ?AnyPtr) callconv(.c) void {
             @call(.always_inline, func, .{
                 env, status.check(),
             }) catch |err| switch (err) {
@@ -131,7 +131,7 @@ pub fn wrapCompleteT(
     comptime func: CompleteT(Ctx),
 ) n.AsyncComplete {
     const Cb = struct {
-        fn proxy(env: Env, status: n.Status, ctx: ?Ctx) callconv(.C) void {
+        fn proxy(env: Env, status: n.Status, ctx: ?Ctx) callconv(.c) void {
             @call(.always_inline, func, .{
                 ctx.?, env, status.check(),
             }) catch |err| switch (err) {

@@ -164,7 +164,7 @@ pub fn wrapCallback(
     };
 
     const Handler = struct {
-        fn cb(opt_env: ?Env, _: ?Val, ctx: Ctx, arg: Arg) callconv(.C) void {
+        fn cb(opt_env: ?Env, _: ?Val, ctx: Ctx, arg: Arg) callconv(.c) void {
             // This is null if the Node env is in the process of getting
             // unloaded. If that's the case, nothing to do here.
             const env = opt_env orelse return;
@@ -216,7 +216,7 @@ pub fn wrapProxy(
             cb_js_opt: ?Val,
             ctx: Ctx,
             arg: Arg,
-        ) callconv(.C) void {
+        ) callconv(.c) void {
             // These are null if the Node env is in the process of getting
             // unloaded. If that's the case, nothing to do here.
             const env = env_opt orelse return;
