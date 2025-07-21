@@ -132,6 +132,7 @@ pub fn build(b: *std.Build) void {
             .target = target,
             .tokota = .{ .dep = &dep_tokota_internal },
         });
+        addon.lib.use_llvm = true;
 
         steps.check.dependOn(&b.addLibrary(.{
             .name = blk: {
