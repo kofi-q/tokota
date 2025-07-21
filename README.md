@@ -61,7 +61,7 @@ Building and packaging addons with Tokota should work wherever Zig works...in th
 
 ### Zig
 
-Tokota requires Zig version `vv0.15.0-dev.1149+4e6a04929` or later (tested up to the version in [`.zigversion`](.zigversion)).
+Tokota requires Zig version `v0.15.0-dev.1149+4e6a04929` or later (tested up to the version in [`.zigversion`](.zigversion)).
 
 ### NodeJS
 
@@ -116,7 +116,7 @@ cd path/to/project && zig init
 Add Tokota, as a dependency, to your `build.zig.zon` file:
 
 ```sh
-zig fetch --save "git+https://github.com/kofi-q/tokota.git"
+zig fetch --save "git+https://github.com/kofi-q/tokota.git#zig-v0.15.0"
 ```
 
 Then, import the dependency in `build.zig` and create an addon build step:
