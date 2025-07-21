@@ -10,5 +10,5 @@ pub fn hello(name: tokota.TinyStr(16)) ![]const u8 {
     var buf: [32]u8 = undefined;
 
     // Built-in return value conversion is available for simple types.
-    return std.fmt.bufPrint(&buf, "{}, how be?", .{name});
+    return std.fmt.bufPrint(&buf, "{f}, how be?", .{name});
 }

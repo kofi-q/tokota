@@ -164,8 +164,8 @@ pub const Type = enum {
 
     pub fn jsonStringify(self: @This(), jws: anytype) !void {
         try jws.print(
-            \\"{s}"
-        , .{@tagName(self)});
+            \\"{t}"
+        , .{self});
     }
 };
 
@@ -186,7 +186,7 @@ pub const Version = struct {
 
     pub fn jsonStringify(self: @This(), jws: anytype) !void {
         try jws.print(
-            \\"{}"
+            \\"{f}"
         , .{self.sem_ver});
     }
 };

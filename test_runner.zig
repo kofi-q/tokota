@@ -9,33 +9,41 @@ pub const tokota_options = Options{
 };
 
 pub fn main() !void {
-    const std_err = std.io.getStdErr().writer();
-    const std_out = std.io.getStdOut().writer();
+    var buf_stderr: [1024]u8 = undefined;
+    var std_err = std.fs.File.stderr().writer(&buf_stderr).interface;
+
+    var buf_stdout: [1024]u8 = undefined;
+    var std_out = std.fs.File.stdout().writer(&buf_stdout).interface;
+
     var had_failures = false;
 
     for (builtin.test_functions) |t| {
         t.func() catch |err| {
             had_failures = true;
-            try std.fmt.format(
-                std_err,
+            try std.io.Writer.print(
+                &std_err,
                 "  " ++ icon.fail ++ " {s}: " ++ color.red("{}") ++ "\n",
                 .{ t.name, err },
             );
             continue;
         };
 
-        try std.fmt.format(std_out, "  " ++ icon.pass ++ " {s}\n", .{t.name});
+        try std.io.Writer.print(
+            &std_out,
+            "  " ++ icon.pass ++ " {s}\n",
+            .{t.name},
+        );
     }
 
     if (had_failures) {
-        try std.fmt.format(std_err, "{s} One or more tests failed.\n", .{
+        try std.io.Writer.print(&std_err, "{s} One or more tests failed.\n", .{
             icon.fail,
         });
 
         return;
     }
 
-    try std.fmt.format(std_out, "{s} Done\n", .{icon.pass});
+    try std.io.Writer.print(&std_out, "{s} Done\n", .{icon.pass});
 }
 
 const icon = struct {

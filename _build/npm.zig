@@ -191,7 +191,7 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
         );
 
         const dep = bin_dependencies.addOne(allo_arena) catch @panic("OOM");
-        dep.* = .{ pkg_name, b.fmt("{}", .{pkg_json_opts.version}) };
+        dep.* = .{ pkg_name, b.fmt("{f}", .{pkg_json_opts.version}) };
 
         const addon = Addon.create(b, .{
             .link_libc = opts.link_libc.get(opts.mode, target),
@@ -621,26 +621,26 @@ fn parsePackageJson(
     const file = std.fs.openFileAbsolute(file_path, .{
         .mode = .read_only,
     }) catch |err| @panic(b.fmt(
-        "{} - Unable to read package.json file from {s}\n",
+        "{t} - Unable to read package.json file from {s}\n",
         .{ err, path.src_path.sub_path },
     ));
     defer file.close();
 
-    var reader = std.json.reader(allo, file.reader());
+    var reader = std.json.reader(allo, file.deprecatedReader());
     const raw = std.json.parseFromTokenSourceLeaky(
         std.json.Value,
         allo,
         &reader,
         .{},
     ) catch |err| @panic(b.fmt(
-        "{} - Unable to parse package.json file from {s}\n",
+        "{t} - Unable to parse package.json file from {s}\n",
         .{ err, path.src_path.sub_path },
     ));
 
     const known_fields = std.json.parseFromValueLeaky(PackageJson, allo, raw, .{
         .ignore_unknown_fields = true,
     }) catch |err| @panic(b.fmt(
-        "{} - Unable to parse package.json file {s}\n",
+        "{t} - Unable to parse package.json file {s}\n",
         .{ err, path.src_path.sub_path },
     ));
 

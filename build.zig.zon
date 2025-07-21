@@ -5,8 +5,8 @@
     .minimum_zig_version = "0.14.1",
     .dependencies = .{
         .base = .{
-            .hash = "base-0.1.0-rhH4ppUoBQBUYC5OJ5Ncghnvt8bn8i2QJa18QxXowF_X",
-            .url = "git+https://github.com/kofi-q/base-z.git#032c4f016efc277a4705a6730d693635a4c00831",
+            .hash = "base-0.1.0-rhH4prklBQA5X9JXlKrXpQaRUpTUdwZT0w0Wemox-j0C",
+            .url = "git+https://github.com/kofi-q/base-z.git?ref=zig-v0.15.0#4f1e15e4ba3760f5b3745fc3f139031350fe8c8d",
         },
     },
     .paths = .{
