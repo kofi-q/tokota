@@ -26,13 +26,8 @@ pub const ErrorInfo = extern struct {
     /// The Node-API status code that originated with the last error.
     code: NapiStatus,
 
-    pub fn format(
-        self: ErrorInfo,
-        comptime _: []const u8,
-        _: std.fmt.FormatOptions,
-        writer: std.Io.AnyWriter,
-    ) !void {
-        try std.fmt.format(writer, "[{}] {s}", .{ self.code, self.msg });
+    pub fn format(self: ErrorInfo, writer: *std.Io.Writer) !void {
+        try writer.print("[{t}] {s}", .{ self.code, self.msg });
     }
 };
 
@@ -40,12 +35,7 @@ pub const ErrorDetails = struct {
     code: ?[:0]const u8 = null,
     msg: [:0]const u8,
 
-    pub fn format(
-        self: ErrorDetails,
-        comptime _: []const u8,
-        _: std.fmt.FormatOptions,
-        writer: std.Io.AnyWriter,
-    ) !void {
-        try std.fmt.format(writer, "[{}] {s}", .{ self.code, self.msg });
+    pub fn format(self: ErrorDetails, writer: *std.Io.Writer) !void {
+        try writer.print("[{?s}] {s}", .{ self.code, self.msg });
     }
 };

@@ -356,13 +356,8 @@ pub const NodeVersion = extern struct {
     patch: u32 = 0,
     release: [*:0]const u8 = "",
 
-    pub fn format(
-        self: NodeVersion,
-        comptime _: []const u8,
-        _: std.fmt.FormatOptions,
-        writer: std.Io.AnyWriter,
-    ) !void {
-        try std.fmt.format(writer, "{s} v{d}.{d}.{d}", .{
+    pub fn format(self: NodeVersion, writer: *std.Io.Writer) !void {
+        try writer.print("{s} v{d}.{d}.{d}", .{
             self.release,
             self.major,
             self.minor,
