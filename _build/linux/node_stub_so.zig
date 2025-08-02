@@ -8,6 +8,7 @@ pub const src_name = "libnode.zig";
 
 pub fn updateSource(
     b: *std.Build,
+    check_step: *std.Build.Step,
     mode: std.builtin.OptimizeMode,
     dep_tokota: ?*std.Build.Dependency,
 ) *std.Build.Step.UpdateSourceFiles {
@@ -21,6 +22,10 @@ pub fn updateSource(
         .root_source_file = b.path("_build/linux/emit_libnode_source.zig"),
         .tokota = .{ .dep = dep_tokota },
     });
+    check_step.dependOn(&b.addLibrary(.{
+        .name = "check",
+        .root_module = addon.root_module,
+    }).step);
 
     const emit = b.addSystemCommand(&.{"node"});
     emit.addFileArg(b.path("_build/linux/emit_libnode_source.js"));
