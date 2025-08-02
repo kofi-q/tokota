@@ -6,8 +6,8 @@
 
     .dependencies = .{
         .base = .{
-            .hash = "base-0.1.0-rhH4phclBQD4OZWCvc5XCkh0svA9SnARtMyVb0MWPoKP",
-            .url = "git+https://github.com/kofi-q/base-z.git?ref=zig-v0.15.0#b8bc8398de45883e54b8a9eca5bb32255edbd704",
+            .hash = "base-0.1.0-rhH4piolBQAXTv0qQKQkD8VV_yEkKwrdBkIjiOURWe7o",
+            .url = "git+https://github.com/kofi-q/base-z.git#35dc932fae1ff14488722fd996ace93d0b39d60d",
         },
         .tokota = .{
             .path = "../..",
