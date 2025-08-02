@@ -14,15 +14,12 @@ pub fn generate(
     scoped_bin_packages: bool,
     targets: []const std.Target.Query,
 ) []const u8 {
-    const allo = arena.allocator();
+    var output = std.Io.Writer.Allocating.initCapacity(
+        arena.allocator(),
+        targets.len * 256,
+    ) catch @panic("OOM");
 
-    var output = ArrayList(u8)
-        .initCapacity(allo, targets.len * 256) catch
-        @panic("OOM");
-
-    const writer = output.writer(allo);
-
-    writer.writeAll(
+    output.writer.writeAll(
         \\// [Tokota] Auto-generated.
         \\
         \\/* eslint-disable */
@@ -42,7 +39,7 @@ pub fn generate(
 
     for (targets) |query| {
         const target = b.resolveTargetQuery(query).result;
-        writer.print(
+        output.writer.print(
             \\  case "{s}":
             \\    pkg = "{s}";
             \\    break;
@@ -53,7 +50,7 @@ pub fn generate(
         }) catch @panic("OOM");
     }
 
-    writer.writeAll(
+    output.writer.writeAll(
         \\  default:
         \\    throw new Error(`Unsupported platform: ${target}`);
         \\}
@@ -86,5 +83,5 @@ pub fn generate(
         \\
     ) catch @panic("OOM");
 
-    return output.items;
+    return output.getWritten();
 }

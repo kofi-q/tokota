@@ -44,6 +44,9 @@ pub fn main() !void {
     }
 
     try std.Io.Writer.print(&std_out, "{s} Done\n", .{icon.pass});
+
+    try std_out.flush();
+    try std_err.flush();
 }
 
 const icon = struct {

@@ -28,15 +28,18 @@ pub fn emit() !void {
         break :blk symbols[0..len].*;
     };
 
-    std.debug.print("\n\n here \n\n", .{});
-    const std_out = std.Io.getStdOut().writer();
-    try std_out.writeAll(
+    var buf: [1024]u8 = undefined;
+    var std_out = std.fs.File.stdout().writer(&buf);
+
+    try std_out.interface.writeAll(
         \\EXPORTS
         \\
     );
 
-    for (symbols) |symbol| try std_out.print(
+    for (symbols) |symbol| try std_out.interface.print(
         \\    {s}
         \\
     , .{symbol});
+
+    try std_out.interface.flush();
 }
