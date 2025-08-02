@@ -49,14 +49,8 @@ pub const Options = struct {
     /// be compatible with.
     napi_version: NapiVersion = .v8,
 
-    pub fn format(
-        self: Options,
-        comptime _: []const u8,
-        _: std.fmt.FormatOptions,
-        writer: std.io.AnyWriter,
-    ) !void {
-        try std.fmt.format(
-            writer,
+    pub fn format(self: Options, writer: *std.Io.Writer) !void {
+        try writer.print(
             Fmt.underline(
                 \\[{[lib_name]s}] Tokota Options:
             ) ++

@@ -9,7 +9,7 @@ comptime {
 
 pub fn hello(name: t.TinyStr(16)) ![]const u8 {
     var buf: [32]u8 = undefined;
-    return std.fmt.bufPrint(&buf, "{}, how be?", .{name});
+    return std.fmt.bufPrint(&buf, "{f}, how be?", .{name});
 }
 
 pub fn target() ![]const u8 {
@@ -17,16 +17,13 @@ pub fn target() ![]const u8 {
 
     return std.fmt.bufPrint(&buf,
         \\Addon Target:
-        \\  OS  - {s}
-        \\  CPU - {s}
-        \\  ABI - {?s}
+        \\   OS - {t}
+        \\  CPU - {t}
+        \\  ABI - {t}
         \\
     , .{
-        @tagName(builtin.os.tag),
-        @tagName(builtin.cpu.arch),
-        switch (builtin.os.tag) {
-            .linux => @tagName(builtin.abi),
-            else => @as(?[]const u8, null),
-        },
+        builtin.os.tag,
+        builtin.cpu.arch,
+        builtin.abi,
     });
 }

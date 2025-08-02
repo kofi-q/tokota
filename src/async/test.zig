@@ -191,7 +191,7 @@ pub const Promises = struct {
             var buf: [64]u8 = undefined;
 
             const err_new = try call.env.err(
-                try std.fmt.bufPrint(&buf, "[modified] {}", .{msg}),
+                try std.fmt.bufPrint(&buf, "[modified] {f}", .{msg}),
                 {},
             );
 

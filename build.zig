@@ -50,12 +50,18 @@ pub fn build(b: *std.Build) void {
     b.addNamedLazyPath(node_stub_so.src_name, b.path(node_stub_so.src_path));
 
     // [TODO] Add CI checks for up-to-date stubs.
-    steps.symbols.dependOn(
-        &node_dll.updateSource(b, mode, &dep_tokota_internal).step,
-    );
-    steps.symbols.dependOn(
-        &node_stub_so.updateSource(b, mode, &dep_tokota_internal).step,
-    );
+    steps.symbols.dependOn(&node_dll.updateSource(
+        b,
+        steps.check,
+        mode,
+        &dep_tokota_internal,
+    ).step);
+    steps.symbols.dependOn(&node_stub_so.updateSource(
+        b,
+        steps.check,
+        mode,
+        &dep_tokota_internal,
+    ).step);
 
     depsJs(b, &steps);
     fmt(b, &steps);
@@ -68,6 +74,7 @@ pub fn build(b: *std.Build) void {
     });
 
     const lib_check = libCheck(b, &steps, mode, target);
+    checkOptions(b, &steps, mode, target);
 
     const lib_tokota_tests = b.addTest(.{
         .root_module = lib_check.root_module,
@@ -132,6 +139,7 @@ pub fn build(b: *std.Build) void {
             .target = target,
             .tokota = .{ .dep = &dep_tokota_internal },
         });
+        addon.lib.use_llvm = true;
 
         steps.check.dependOn(&b.addLibrary(.{
             .name = blk: {
@@ -176,6 +184,22 @@ fn bunTest(b: *std.Build, filename: []const u8) *std.Build.Step {
     return &bun_test.step;
 }
 
+fn checkOptions(
+    b: *std.Build,
+    steps: *const Steps,
+    mode: std.builtin.OptimizeMode,
+    target: std.Build.ResolvedTarget,
+) void {
+    steps.check.dependOn(&b.addTest(.{
+        .name = "tokota_check",
+        .root_module = b.createModule(.{
+            .optimize = mode,
+            .root_source_file = b.path("options/root.zig"),
+            .target = target,
+        }),
+    }).step);
+}
+
 fn denoTest(b: *std.Build, target: std.Target) *std.Build.Step {
     const deno_test = b.addSystemCommand(&.{
         "deno",
@@ -194,25 +218,9 @@ fn denoTest(b: *std.Build, target: std.Target) *std.Build.Step {
     return &deno_test.step;
 }
 
-fn libCheck(
-    b: *std.Build,
-    steps: *const Steps,
-    mode: std.builtin.OptimizeMode,
-    target: std.Build.ResolvedTarget,
-) *std.Build.Step.Compile {
-    const lib = b.addLibrary(.{
-        .name = "tokota_check",
-        .root_module = b.createModule(.{
-            .imports = tokota.imports(b, mode, target),
-            .link_libc = target.result.os.tag == .linux,
-            .optimize = mode,
-            .root_source_file = b.path("src/check.zig"),
-            .target = target,
-        }),
-    });
-    steps.check.dependOn(&lib.step);
-
-    return lib;
+fn depsJs(b: *std.Build, steps: *const Steps) void {
+    const run = b.addSystemCommand(&.{ "pnpm", "i", "--frozen-lockfile" });
+    steps.deps_js.dependOn(&run.step);
 }
 
 fn fmt(b: *std.Build, steps: *const Steps) void {
@@ -235,9 +243,25 @@ fn fmt(b: *std.Build, steps: *const Steps) void {
     steps.fmt.dependOn(&prettier.step);
 }
 
-fn depsJs(b: *std.Build, steps: *const Steps) void {
-    const run = b.addSystemCommand(&.{ "pnpm", "i", "--frozen-lockfile" });
-    steps.deps_js.dependOn(&run.step);
+fn libCheck(
+    b: *std.Build,
+    steps: *const Steps,
+    mode: std.builtin.OptimizeMode,
+    target: std.Build.ResolvedTarget,
+) *std.Build.Step.Compile {
+    const lib = b.addLibrary(.{
+        .name = "tokota_check",
+        .root_module = b.createModule(.{
+            .imports = tokota.imports(b, mode, target),
+            .link_libc = target.result.os.tag == .linux,
+            .optimize = mode,
+            .root_source_file = b.path("src/check.zig"),
+            .target = target,
+        }),
+    });
+    steps.check.dependOn(&lib.step);
+
+    return lib;
 }
 
 fn typecheck(b: *std.Build, steps: *const Steps) void {

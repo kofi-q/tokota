@@ -1,4 +1,5 @@
 const std = @import("std");
+const Writer = std.Io.Writer;
 
 const Env = @import("../root.zig").Env;
 const Val = @import("../root.zig").Val;
@@ -32,13 +33,8 @@ pub fn TinyStr(comptime buffer_size: u8) type {
         buf: [buffer_size + 1]u8,
         len: u8,
 
-        pub fn format(
-            self: @This(),
-            comptime _: []const u8,
-            opts: std.fmt.FormatOptions,
-            writer: std.io.AnyWriter,
-        ) !void {
-            try std.fmt.formatText(self.slice(), "s", opts, writer);
+        pub fn format(self: @This(), writer: *Writer) Writer.Error!void {
+            try writer.writeAll(self.slice());
         }
 
         pub inline fn fromJs(env: Env, val: Val) !@This() {

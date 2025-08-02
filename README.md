@@ -61,7 +61,7 @@ Building and packaging addons with Tokota should work wherever Zig works...in th
 
 ### Zig
 
-Tokota requires Zig version `v0.14.1` or later (tested up to the version in [`.zigversion`](.zigversion)).
+Tokota requires Zig version `v0.15.0-dev.1283+1fcaf90dd` or later (tested up to the version in [`.zigversion`](.zigversion)).
 
 ### NodeJS
 

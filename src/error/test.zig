@@ -19,7 +19,7 @@ pub fn callFailingFunction(call: t.Call, function: t.Fn) !t.Val {
             .code = "UnexpectedError",
             .msg = try std.fmt.bufPrintZ(
                 &buf_err,
-                "Expected error {}, got {}\n",
+                "Expected error {t}, got {t}\n",
                 .{ t.Err.PendingException, err },
             ),
         });
@@ -29,7 +29,7 @@ pub fn callFailingFunction(call: t.Call, function: t.Fn) !t.Val {
             .code = "UnexpectedNapiLastError",
             .msg = try std.fmt.bufPrintZ(
                 &buf_err,
-                "Expected last error status {}, got {}\n",
+                "Expected last error status {t}, got {t}\n",
                 .{ n.Status.pending_exception, last_err.code },
             ),
         });
