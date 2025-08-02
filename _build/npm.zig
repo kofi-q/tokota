@@ -207,27 +207,31 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
             .tokota = opts.tokota,
         });
 
-        const pkg_json_contents = json.stringifyAlloc(allo_arena, PackageJson{
-            .name = pkg_name,
-            .version = .{ .sem_ver = pkg_json_opts.version },
-            .description = pkg_json_opts.description,
-            .author = pkg_json_opts.author,
-            .homepage = pkg_json_opts.homepage,
-            .license = pkg_json_opts.license,
-            .keywords = pkg_json_opts.keywords,
+        const pkg_json_contents = json.Stringify.valueAlloc(
+            allo_arena,
+            PackageJson{
+                .name = pkg_name,
+                .version = .{ .sem_ver = pkg_json_opts.version },
+                .description = pkg_json_opts.description,
+                .author = pkg_json_opts.author,
+                .homepage = pkg_json_opts.homepage,
+                .license = pkg_json_opts.license,
+                .keywords = pkg_json_opts.keywords,
 
-            .main = addon.basename,
+                .main = addon.basename,
 
-            .publishConfig = pkg_json_opts.publish_config,
-            .repository = pkg_json_opts.repository,
+                .publishConfig = pkg_json_opts.publish_config,
+                .repository = pkg_json_opts.repository,
 
-            .os = &.{nodeOs(target.result)},
-            .cpu = &.{nodeCpu(target.result)},
-            .libc = if (nodeAbi(target.result)) |abi| &.{abi} else null,
-        }, .{
-            .emit_null_optional_fields = false,
-            .whitespace = .indent_2,
-        }) catch @panic("OOM");
+                .os = &.{nodeOs(target.result)},
+                .cpu = &.{nodeCpu(target.result)},
+                .libc = if (nodeAbi(target.result)) |abi| &.{abi} else null,
+            },
+            .{
+                .emit_null_optional_fields = false,
+                .whitespace = .indent_2,
+            },
+        ) catch @panic("package.json write failed");
 
         const pkg_files = b.addWriteFiles();
         if (opts.pre_package) |pre| pkg_files.step.dependOn(pre);
@@ -327,7 +331,7 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
                 .put("optionalDependencies", .{ .object = opt_deps }) catch
                 @panic("OOM");
 
-            break :patched std.json.stringifyAlloc(allo_arena, std.json.Value{
+            break :patched json.Stringify.valueAlloc(allo_arena, std.json.Value{
                 .object = raw_object,
             }, .{
                 .emit_null_optional_fields = false,
@@ -626,11 +630,14 @@ fn parsePackageJson(
     ));
     defer file.close();
 
-    var reader = std.json.reader(allo, file.deprecatedReader());
+    var buf: [1024]u8 = undefined;
+    var file_reader = file.reader(&buf);
+
+    var json_reader = std.json.Reader.init(allo, &file_reader.interface);
     const raw = std.json.parseFromTokenSourceLeaky(
         std.json.Value,
         allo,
-        &reader,
+        &json_reader,
         .{},
     ) catch |err| @panic(b.fmt(
         "{t} - Unable to parse package.json file from {s}\n",

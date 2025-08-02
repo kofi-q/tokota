@@ -2,11 +2,11 @@
     .name = .tokota,
     .version = "0.1.0",
     .fingerprint = 0xe4591fcbcafe4f04,
-    .minimum_zig_version = "0.15.0-dev.1149+4e6a04929",
+    .minimum_zig_version = "0.15.0-dev.1283+1fcaf90dd",
     .dependencies = .{
         .base = .{
-            .hash = "base-0.1.0-rhH4prklBQA5X9JXlKrXpQaRUpTUdwZT0w0Wemox-j0C",
-            .url = "git+https://github.com/kofi-q/base-z.git?ref=zig-v0.15.0#4f1e15e4ba3760f5b3745fc3f139031350fe8c8d",
+            .hash = "base-0.1.0-rhH4phclBQD4OZWCvc5XCkh0svA9SnARtMyVb0MWPoKP",
+            .url = "git+https://github.com/kofi-q/base-z.git?ref=zig-v0.15.0#b8bc8398de45883e54b8a9eca5bb32255edbd704",
         },
     },
     .paths = .{

@@ -68,6 +68,7 @@ pub fn build(b: *std.Build) void {
     });
 
     const lib_check = libCheck(b, &steps, mode, target);
+    buildCheck(b, &steps, mode, target);
 
     const lib_tokota_tests = b.addTest(.{
         .root_module = lib_check.root_module,
@@ -168,6 +169,26 @@ pub fn build(b: *std.Build) void {
             .target = target,
         }),
     }), "docs/build"));
+}
+
+fn buildCheck(
+    b: *std.Build,
+    steps: *const Steps,
+    mode: std.builtin.OptimizeMode,
+    target: std.Build.ResolvedTarget,
+) void {
+    const lib = b.addLibrary(.{
+        .name = "tokota_build_check",
+        .root_module = b.createModule(.{
+            .imports = &.{
+                tokota.importBase(b, mode, target),
+            },
+            .optimize = mode,
+            .root_source_file = b.path("_build/root.zig"),
+            .target = target,
+        }),
+    });
+    steps.check.dependOn(&lib.step);
 }
 
 fn bunTest(b: *std.Build, filename: []const u8) *std.Build.Step {
