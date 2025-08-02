@@ -1,5 +1,5 @@
 const std = @import("std");
-const Writer = std.io.Writer;
+const Writer = std.Io.Writer;
 
 const Env = @import("../root.zig").Env;
 const Val = @import("../root.zig").Val;

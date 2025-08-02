@@ -20,7 +20,7 @@ pub fn main() !void {
     for (builtin.test_functions) |t| {
         t.func() catch |err| {
             had_failures = true;
-            try std.io.Writer.print(
+            try std.Io.Writer.print(
                 &std_err,
                 "  " ++ icon.fail ++ " {s}: " ++ color.red("{}") ++ "\n",
                 .{ t.name, err },
@@ -28,7 +28,7 @@ pub fn main() !void {
             continue;
         };
 
-        try std.io.Writer.print(
+        try std.Io.Writer.print(
             &std_out,
             "  " ++ icon.pass ++ " {s}\n",
             .{t.name},
@@ -36,14 +36,14 @@ pub fn main() !void {
     }
 
     if (had_failures) {
-        try std.io.Writer.print(&std_err, "{s} One or more tests failed.\n", .{
+        try std.Io.Writer.print(&std_err, "{s} One or more tests failed.\n", .{
             icon.fail,
         });
 
         return;
     }
 
-    try std.io.Writer.print(&std_out, "{s} Done\n", .{icon.pass});
+    try std.Io.Writer.print(&std_out, "{s} Done\n", .{icon.pass});
 }
 
 const icon = struct {

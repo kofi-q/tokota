@@ -23,7 +23,7 @@ pub fn emit() !void {
         break :blk symbols[0..len].*;
     };
 
-    const std_out = std.io.getStdOut().writer();
+    const std_out = std.Io.getStdOut().writer();
 
     for (symbols) |symbol| try std_out.print(
         \\export fn {s}() void {{}}

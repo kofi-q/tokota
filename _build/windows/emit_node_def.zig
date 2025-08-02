@@ -28,7 +28,8 @@ pub fn emit() !void {
         break :blk symbols[0..len].*;
     };
 
-    const std_out = std.io.getStdOut().writer();
+    std.debug.print("\n\n here \n\n", .{});
+    const std_out = std.Io.getStdOut().writer();
     try std_out.writeAll(
         \\EXPORTS
         \\

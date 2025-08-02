@@ -53,7 +53,7 @@ pub const Options = struct {
         self: Options,
         comptime _: []const u8,
         _: std.fmt.FormatOptions,
-        writer: std.io.AnyWriter,
+        writer: std.Io.AnyWriter,
     ) !void {
         try std.fmt.format(
             writer,

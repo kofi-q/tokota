@@ -30,7 +30,7 @@ pub const ErrorInfo = extern struct {
         self: ErrorInfo,
         comptime _: []const u8,
         _: std.fmt.FormatOptions,
-        writer: std.io.AnyWriter,
+        writer: std.Io.AnyWriter,
     ) !void {
         try std.fmt.format(writer, "[{}] {s}", .{ self.code, self.msg });
     }
@@ -44,7 +44,7 @@ pub const ErrorDetails = struct {
         self: ErrorDetails,
         comptime _: []const u8,
         _: std.fmt.FormatOptions,
-        writer: std.io.AnyWriter,
+        writer: std.Io.AnyWriter,
     ) !void {
         try std.fmt.format(writer, "[{}] {s}", .{ self.code, self.msg });
     }

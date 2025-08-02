@@ -360,7 +360,7 @@ pub const NodeVersion = extern struct {
         self: NodeVersion,
         comptime _: []const u8,
         _: std.fmt.FormatOptions,
-        writer: std.io.AnyWriter,
+        writer: std.Io.AnyWriter,
     ) !void {
         try std.fmt.format(writer, "{s} v{d}.{d}.{d}", .{
             self.release,
