@@ -137,6 +137,9 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .root_source_file = b.path("src/root.zig"),
         .output_dir = .{ .custom = "../lib" },
+
+        // Required when targeting non-Node.js runtimes on Windows:
+        // .win32_runtime = .bun,
     });
 
     // Add other settings/imports/linked libraries your addon may need:
@@ -149,7 +152,7 @@ pub fn build(b: *std.Build) !void {
 
 > [!TIP]
 >
-> For reference on building and publishing multi-platform NPM packages, take a look at the [NPM example](./examples/npm/build.zig) or the documentation for [`build.npm.createPackages`](https://kofi-q.github.io/tokota/build/#tokota_build.npm.createPackages).
+> For reference on building and publishing multi-platform NPM packages, take a look at the [NPM example](./examples/npm/build.zig) and the documentation for [`build.npm.createPackages`](https://kofi-q.github.io/tokota/build/#tokota_build.npm.createPackages).
 
 The above creates a compilation unit with a `"tokota"` import which can be used in your addon code. See [`build.Addon.Options`](https://kofi-q.github.io/tokota/build/#tokota_build.Addon.Options) for more details on addon binary creation.
 

@@ -4,6 +4,7 @@ const std = @import("std");
 
 const node_dll = @import("windows/node_dll.zig");
 const node_stub_so = @import("linux/node_stub_so.zig");
+const targets = @import("targets.zig");
 
 const Addon = @This();
 
@@ -69,6 +70,16 @@ pub const Options = struct {
     /// Optional tokota module configuration.
     tokota: Tokota = .{},
 
+    /// When targeting Windows, the addon needs to be linked against a specific
+    /// executable name (node.exe, by default). Specify a different target
+    /// runtime if the addon will be loaded within a non-Node.js runtime.
+    ///
+    /// This is a temporary workaround until a better solution is found, or
+    /// until Zig provides delay-load support to enable lazily linking to the
+    /// calling runtime when first loaded:
+    /// https://github.com/ziglang/zig/issues/7049
+    win32_runtime: targets.Runtime = .node,
+
     pub const Tokota = struct {
         /// The tokota build dependency, via `std.Build.dependency()`, if
         /// it is being imported with a name other than `"tokota"`.
@@ -113,7 +124,10 @@ pub fn create(b: *std.Build, opts: Options) Addon {
     });
 
     switch (opts.target.result.os.tag) {
-        .windows => linkNodeStubWin32(b, lib, opts.tokota.dep),
+        .windows => linkNodeStubWin32(b, lib, .{
+            .dep_tokota = opts.tokota.dep,
+            .win32_runtime = opts.win32_runtime,
+        }),
         else => lib.linker_allow_shlib_undefined = true,
     }
 
@@ -132,17 +146,34 @@ pub fn create(b: *std.Build, opts: Options) Addon {
     };
 }
 
+pub const LibnodeStubOpts = struct {
+    /// The Tokota build dependency, via std.Build.dependency(), if it is being
+    /// imported with a name other than "tokota". Defaults to a dependency
+    /// created via std.Build.dependency("tokota")
+    dep_tokota: ?*std.Build.Dependency = null,
+
+    /// When targeting Windows, the addon needs to be linked against a specific
+    /// executable name (node.exe, by default). Specify a different target
+    /// runtime if the addon will be loaded within a non-Node.js runtime.
+    ///
+    /// This is a temporary workaround until a better solution is found, or
+    /// until Zig provides delay-load support to enable lazily linking to the
+    /// calling runtime when first loaded:
+    /// https://github.com/ziglang/zig/issues/7049
+    win32_runtime: targets.Runtime = .node,
+};
+
 /// Links a stub library containing Node-API symbols to enable compiling addon
 /// code for use outside a Node process (e.g. when running native tests via
 /// `std.testing.refAllDecls[Recursive]`.
 pub fn linkNodeStub(
     b: *std.Build,
     lib: *std.Build.Step.Compile,
-    dep_tokota: ?*std.Build.Dependency,
+    opts: LibnodeStubOpts,
 ) void {
     switch (lib.rootModuleTarget().os.tag) {
-        .linux => linkNodeStubLinux(b, lib, dep_tokota),
-        .windows => linkNodeStubWin32(b, lib, dep_tokota),
+        .linux => linkNodeStubLinux(b, lib, opts),
+        .windows => linkNodeStubWin32(b, lib, opts),
         else => lib.linker_allow_shlib_undefined = true,
     }
 }
@@ -153,11 +184,11 @@ pub fn linkNodeStub(
 pub fn linkNodeStubLinux(
     b: *std.Build,
     lib: *std.Build.Step.Compile,
-    dep_tokota: ?*std.Build.Dependency,
+    opts: LibnodeStubOpts,
 ) void {
     const mode = lib.root_module.optimize.?;
     const target = lib.root_module.resolved_target;
-    lib.linkLibrary(node_stub_so.build(b, mode, target, dep_tokota));
+    lib.linkLibrary(node_stub_so.build(b, mode, target, opts.dep_tokota));
 }
 
 /// Links a stub DLL containing Node-API symbols to enable compiling addon
@@ -166,13 +197,14 @@ pub fn linkNodeStubLinux(
 pub fn linkNodeStubWin32(
     b: *std.Build,
     lib: *std.Build.Step.Compile,
-    dep_tokota: ?*std.Build.Dependency,
+    opts: LibnodeStubOpts,
 ) void {
     const node_dll_step, const node_dll_path = node_dll.build(
         b,
+        opts.win32_runtime,
         lib.root_module.optimize.?,
         lib.rootModuleTarget(),
-        dep_tokota,
+        opts.dep_tokota,
     );
     lib.step.dependOn(&node_dll_step.step);
     lib.addLibraryPath(node_dll_path.dirname());

@@ -1,25 +1,27 @@
 const std = @import("std");
 const ArrayList = std.ArrayListUnmanaged;
 
+const AddonTarget = @import("targets.zig").AddonTarget;
 const nodeAbi = @import("targets.zig").nodeAbi;
 const nodeCpu = @import("targets.zig").nodeCpu;
 const nodeOs = @import("targets.zig").nodeOs;
 const nodeTriple = @import("targets.zig").nodeTriple;
 const packageName = @import("targets.zig").packageName;
+const Runtime = @import("targets.zig").Runtime;
 
 pub fn generate(
     b: *std.Build,
     arena: *std.heap.ArenaAllocator,
     lib_name: []const u8,
     scoped_bin_packages: bool,
-    targets: []const std.Target.Query,
-) []const u8 {
-    var output = std.Io.Writer.Allocating.initCapacity(
+    targets: []const AddonTarget,
+) error{ OutOfMemory, WriteFailed }![]const u8 {
+    var output = try std.Io.Writer.Allocating.initCapacity(
         arena.allocator(),
         targets.len * 256,
-    ) catch @panic("OOM");
+    );
 
-    output.writer.writeAll(
+    try output.writer.writeAll(
         \\// [Tokota] Auto-generated.
         \\
         \\/* eslint-disable */
@@ -35,22 +37,34 @@ pub fn generate(
         \\
         \\switch (target) {
         \\
-    ) catch @panic("OOM");
+    );
 
-    for (targets) |query| {
-        const target = b.resolveTargetQuery(query).result;
-        output.writer.print(
+    var win32_runtimes = std.EnumSet(Runtime).initEmpty();
+    for (targets) |t| {
+        const target = b.resolveTargetQuery(t.query).result;
+
+        if (target.os.tag == .windows) {
+            win32_runtimes.insert(t.win32_runtime);
+        }
+
+        try output.writer.print(
             \\  case "{s}":
             \\    pkg = "{s}";
             \\    break;
             \\
         , .{
-            nodeTriple(b, target),
-            packageName(b, lib_name, scoped_bin_packages, target),
-        }) catch @panic("OOM");
+            nodeTriple(b, target, t.win32_runtime),
+            packageName(
+                b,
+                lib_name,
+                scoped_bin_packages,
+                target,
+                t.win32_runtime,
+            ),
+        });
     }
 
-    output.writer.writeAll(
+    try output.writer.writeAll(
         \\  default:
         \\    throw new Error(`Unsupported platform: ${target}`);
         \\}
@@ -66,6 +80,35 @@ pub fn generate(
         \\}
         \\
         \\function detectAbi() {
+        \\
+    );
+
+    if (win32_runtimes.count() > 0) {
+        try output.writer.print(
+            \\  if (process.platform === "{s}") {{
+            \\
+        , .{nodeOs(.windows)});
+        if (win32_runtimes.contains(.bun)) try output.writer.writeAll(
+            \\    if (process.versions.bun) return "bun";
+            \\
+        );
+        if (win32_runtimes.contains(.deno)) try output.writer.writeAll(
+            \\    if (process.versions.deno) return "deno";
+            \\
+        );
+        if (win32_runtimes.contains(.electron)) try output.writer.writeAll(
+            \\    if (process.versions.electron) return "electron";
+            \\
+        );
+        try output.writer.writeAll(
+            \\    return "node";
+            \\  }
+            \\
+            \\
+        );
+    }
+
+    try output.writer.writeAll(
         \\  if (process.platform !== "linux") return null;
         \\
         \\  try {
@@ -81,7 +124,7 @@ pub fn generate(
         \\  throw new Error("Unable to detect Linux ABI");
         \\}
         \\
-    ) catch @panic("OOM");
+    );
 
     return output.getWritten();
 }

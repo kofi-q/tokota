@@ -80,7 +80,9 @@ pub fn build(b: *std.Build) void {
         .root_module = lib_check.root_module,
         .test_runner = .{ .mode = .simple, .path = b.path("test_runner.zig") },
     });
-    Addon.linkNodeStub(b, lib_tokota_tests, &dep_tokota_internal);
+    Addon.linkNodeStub(b, lib_tokota_tests, .{
+        .dep_tokota = &dep_tokota_internal,
+    });
 
     const cmd_test_tokota = b.addRunArtifact(lib_tokota_tests);
     steps.test_zig.dependOn(&cmd_test_tokota.step);

@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const Addon = @import("../Addon.zig");
+const targets = @import("../targets.zig");
 const tokota = @import("../tokota.zig");
 
 pub const def_path = "_build/windows/node.def";
@@ -47,10 +48,18 @@ pub fn updateSource(
 /// Generates a `node.lib` stub DLL containing Node-API symbols to link against
 /// when building for Windows targets.
 ///
+/// Linking against the generated stub will result in a binary that is
+/// compatible only with the specified runtime, as the DLL name currently needs
+/// to be hardcoded to a specific runtime. This is a temporary workaround until
+/// a better solution is found, or until Zig provides delay-load support to
+/// enable lazily linking to the calling runtime when first loaded:
+/// https://github.com/ziglang/zig/issues/7049
+///
 /// > #### ⚠ NOTE
 /// > Requires `addNodeDef` to have been called in the Tokota build root first.
 pub fn build(
     b: *std.Build,
+    runtime: targets.Runtime,
     mode: std.builtin.OptimizeMode,
     target: std.Target,
     dep_tokota: ?*std.Build.Dependency,
@@ -72,10 +81,15 @@ pub fn build(
         },
     };
 
+    var name_buf: [targets.Runtime.nameLenMax() + 4]u8 = undefined;
+    const dll_name = std.fmt.bufPrint(&name_buf, "{t}.exe", .{
+        runtime,
+    }) catch @panic("OOM");
+
     var create_dll = b.addSystemCommand(&.{
         b.graph.zig_exe, "dlltool",
         "-m",            dlltool_arch,
-        "-D",            "node.exe",
+        "-D",            dll_name,
     });
 
     create_dll.addPrefixedFileArg("-d", _dep_tokota.namedLazyPath(def_name));
