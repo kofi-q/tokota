@@ -37,6 +37,11 @@ pub fn build(b: *std.Build) !void {
             .{ .os_tag = .windows, .cpu_arch = .x86 },
             .{ .os_tag = .windows, .cpu_arch = .x86_64 },
         },
+        .win32_runtimes = .{
+            .bun = true,
+            .electron = true,
+            .node = true,
+        },
     });
 
     step_packages.dependOn(packages.install);

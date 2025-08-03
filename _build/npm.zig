@@ -8,11 +8,14 @@ const std = @import("std");
 const base = @import("base");
 
 const Addon = @import("Addon.zig");
+const AddonTarget = @import("targets.zig").AddonTarget;
 const index_js = @import("index_js.zig");
+const node_dll = @import("windows/node_dll.zig");
 const nodeAbi = @import("targets.zig").nodeAbi;
 const nodeCpu = @import("targets.zig").nodeCpu;
 const nodeOs = @import("targets.zig").nodeOs;
 const packageName = @import("targets.zig").packageName;
+const Runtime = @import("targets.zig").Runtime;
 
 pub const PackageJson = @import("PackageJson.zig");
 
@@ -59,6 +62,11 @@ pub const PackageJson = @import("PackageJson.zig");
 ///        .targets = &.{
 ///            .{ .os_tag = .linux, .cpu_arch = .x86_64, .abi = .gnu },
 ///            .{ .os_tag = .macos, .cpu_arch = .aarch64 },
+///            .{ .os_tag = .windows, .cpu_arch = .x86_64 },
+///        },
+///        .win32_runtimes = .{
+///            .bun = true,
+///            .node = true,
 ///        },
 ///    });
 /// }
@@ -87,7 +95,13 @@ pub const PackageJson = @import("PackageJson.zig");
 ///        │   ├─ macos-aarch64/
 ///        │   │   ├─ addon.node
 ///        │   │   └─ package.json
-///        │   └─ linux-x86_64-gnu/
+///        │   ├─ linux-x86_64-gnu/
+///        │   │   ├─ addon.node
+///        │   │   └─ package.json
+///        │   ├─ windows-x86_64-bun/
+///        │   │   ├─ addon.node
+///        │   │   └─ package.json
+///        │   └─ windows-x86_64-node/
 ///        │       ├─ addon.node
 ///        │       └─ package.json
 ///        └─ my-addon/
@@ -114,7 +128,9 @@ pub const PackageJson = @import("PackageJson.zig");
 ///   ],
 ///   "optionalDependencies": [
 ///     "@my-addon/macos-aarch64",
-///     "@my-addon/linux-x86_64-gnu"
+///     "@my-addon/linux-x86_64-gnu",
+///     "@my-addon/windows-x86_64-bun",
+///     "@my-addon/windows-x86_64-node"
 ///   ]
 /// }
 /// ```
@@ -181,13 +197,49 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
         opts.targets.len,
     ) catch @panic("OOM");
 
+    var targets = std.ArrayListUnmanaged(AddonTarget).initCapacity(
+        allo_arena,
+        opts.targets.len,
+    ) catch @panic("OOM");
+    if (opts.win32_runtimes == Options.Win32Runtimes{}) @panic(
+        "At least one target runtime is required for Windows targets",
+    );
+
     for (opts.targets) |query| {
-        const target = b.resolveTargetQuery(query);
+        if (query.os_tag != .windows) {
+            targets.append(allo_arena, .{ .query = query }) catch @panic("OOM");
+            continue;
+        }
+
+        if (opts.win32_runtimes.bun) targets.append(allo_arena, .{
+            .query = query,
+            .win32_runtime = .bun,
+        }) catch @panic("OOM");
+
+        if (opts.win32_runtimes.deno) targets.append(allo_arena, .{
+            .query = query,
+            .win32_runtime = .deno,
+        }) catch @panic("OOM");
+
+        if (opts.win32_runtimes.electron) targets.append(allo_arena, .{
+            .query = query,
+            .win32_runtime = .electron,
+        }) catch @panic("OOM");
+
+        if (opts.win32_runtimes.node) targets.append(allo_arena, .{
+            .query = query,
+            .win32_runtime = .node,
+        }) catch @panic("OOM");
+    }
+
+    for (targets.items) |t| {
+        const target = b.resolveTargetQuery(t.query);
         const pkg_name = packageName(
             b,
             main_pkg_name,
             opts.scoped_bin_packages,
             target.result,
+            t.win32_runtime,
         );
 
         const dep = bin_dependencies.addOne(allo_arena) catch @panic("OOM");
@@ -205,6 +257,7 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
             .strip = opts.strip.get(opts.mode, target),
             .target = target,
             .tokota = opts.tokota,
+            .win32_runtime = t.win32_runtime,
         });
 
         const pkg_json_contents = json.Stringify.valueAlloc(
@@ -223,7 +276,7 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
                 .publishConfig = pkg_json_opts.publish_config,
                 .repository = pkg_json_opts.repository,
 
-                .os = &.{nodeOs(target.result)},
+                .os = &.{nodeOs(target.result.os.tag)},
                 .cpu = &.{nodeCpu(target.result)},
                 .libc = if (nodeAbi(target.result)) |abi| &.{abi} else null,
             },
@@ -347,8 +400,12 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
             &arena,
             main_pkg_name,
             opts.scoped_bin_packages,
-            opts.targets,
-        ));
+            targets.items,
+        ) catch |err| switch (err) {
+            error.OutOfMemory,
+            error.WriteFailed,
+            => @panic("OOM"),
+        });
 
         _ = if (opts.npmignore) |npmignore|
             pkg_files.addCopyFile(npmignore, ".npmignore");
@@ -575,6 +632,30 @@ pub const Options = struct {
     /// Caller is responsible for ensuring that the addon can be cross-compiled
     /// successfully on the current host.
     targets: []const std.Target.Query,
+
+    /// When targeting Windows, addon binaries need to be linked against a
+    /// specific executable name (node.exe, by default). Override this setting
+    /// to specify different/additional target runtimes to support on Windows.
+    ///
+    /// This is a temporary workaround until a better solution is found, or
+    /// until Zig provides delay-load support to enable lazily linking to the
+    /// calling runtime when first loaded:
+    /// https://github.com/ziglang/zig/issues/7049
+    ///
+    /// For now, this will result in separate binary packages for each selected
+    /// runtime. The appropriate binary package will be conditionally imported,
+    /// by the `addon.js` entrypoint in the main package, based on the detected
+    /// runtime - however, all packages matching the user's architecture will
+    /// be downloaded from the NPM registry, so keep that in mind for large
+    /// binaries.
+    win32_runtimes: Win32Runtimes = .{ .node = true },
+
+    const Win32Runtimes = packed struct {
+        bun: bool = false,
+        deno: bool = false,
+        electron: bool = false,
+        node: bool = false,
+    };
 };
 
 pub const TargetSpecificFlag = union(enum) {

@@ -1,5 +1,10 @@
 const std = @import("std");
 
+pub const AddonTarget = struct {
+    query: std.Target.Query,
+    win32_runtime: Runtime = .node,
+};
+
 pub fn nodeAbi(target: std.Target) ?[]const u8 {
     if (target.os.tag != .linux) return null;
     if (target.abi.isGnu()) return "glibc";
@@ -20,24 +25,33 @@ pub fn nodeCpu(target: std.Target) []const u8 {
     };
 }
 
-pub fn nodeOs(target: std.Target) []const u8 {
-    return switch (target.os.tag) {
+pub fn nodeOs(tag: std.Target.Os.Tag) []const u8 {
+    return switch (tag) {
         .macos => "darwin",
         .solaris => "sunos",
         .windows => "win32",
-        else => @tagName(target.os.tag),
+        else => @tagName(tag),
     };
 }
 
-pub fn nodeTriple(b: *std.Build, target: std.Target) []const u8 {
+pub fn nodeTriple(
+    b: *std.Build,
+    target: std.Target,
+    win32_runtime: Runtime,
+) []const u8 {
     return switch (target.os.tag) {
         .linux => b.fmt("{s}-{s}-{s}", .{
-            nodeOs(target),
+            nodeOs(.linux),
             nodeCpu(target),
             nodeAbi(target).?,
         }),
+        .windows => b.fmt("{s}-{s}-{t}", .{
+            nodeOs(.windows),
+            nodeCpu(target),
+            win32_runtime,
+        }),
         else => b.fmt("{s}-{s}", .{
-            nodeOs(target),
+            nodeOs(target.os.tag),
             nodeCpu(target),
         }),
     };
@@ -48,6 +62,7 @@ pub fn packageName(
     lib_name: []const u8,
     scoped_bin_packages: bool,
     target: std.Target,
+    win32_runtime: Runtime,
 ) []const u8 {
     const prefix = if (!scoped_bin_packages or lib_name[0] == '@')
         b.fmt("{s}-", .{lib_name})
@@ -62,6 +77,11 @@ pub fn packageName(
                 @tagName(target.cpu.arch),
                 @tagName(target.abi),
             }),
+            .windows => b.fmt("{s}-{s}-{s}", .{
+                @tagName(target.os.tag),
+                @tagName(target.cpu.arch),
+                @tagName(win32_runtime),
+            }),
             else => b.fmt("{s}-{s}", .{
                 @tagName(target.os.tag),
                 @tagName(target.cpu.arch),
@@ -69,3 +89,14 @@ pub fn packageName(
         },
     });
 }
+
+pub const Runtime = enum {
+    bun,
+    deno,
+    electron,
+    node,
+
+    pub fn nameLenMax() comptime_int {
+        return @tagName(Runtime.electron).len;
+    }
+};
