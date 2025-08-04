@@ -102,7 +102,7 @@ pub const Val = @import("val.zig").Val;
 pub const ValType = @import("val.zig").ValType;
 
 /// Types related to NodeJS async operations.
-pub const Async = struct {
+pub const async = struct {
     const mod_task = @import("async/task.zig");
     const mod_work = @import("async/worker.zig");
 
@@ -114,6 +114,9 @@ pub const Async = struct {
     pub const Task = mod_task.Task;
     pub const Worker = mod_work.Worker;
 };
+
+/// Deprecated: use `async` instead.
+pub const Async = async;
 
 /// Types related to Threadsafe Functions, providing a communication channel
 /// between secondary/background threads and the main JS thread.

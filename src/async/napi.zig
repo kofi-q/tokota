@@ -15,7 +15,7 @@ pub const AsyncContext = *const opaque {};
 /// https://nodejs.org/docs/latest/api/n-api.html#napi_async_execute_callback
 pub const AsyncExecute = *const fn (t.Env, ?t.AnyPtr) callconv(.c) void;
 
-pub const AsyncWorker = t.Async.Worker;
+pub const AsyncWorker = t.async.Worker;
 
 pub const CallbackScope = *const opaque {};
 

@@ -20,7 +20,7 @@ pub fn todoTotals(call: t.Call) !t.Promise {
 /// Exposes async callbacks required by `Env.asyncTask()` for executing
 /// and settling the `Promise`.
 const Runner = struct {
-    task: t.Async.Task(*@This()),
+    task: t.async.Task(*@This()),
 
     const Todo = struct { completed: bool };
     const Totals = struct { completed: u32, pending: u32 };
