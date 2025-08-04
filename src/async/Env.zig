@@ -2,7 +2,7 @@
 
 const std = @import("std");
 
-const Async = @import("../root.zig").Async;
+const async = @import("../root.zig").async;
 const Deferred = @import("promise.zig").Deferred;
 const Env = @import("../root.zig").Env;
 const n = @import("../napi.zig");
@@ -93,7 +93,7 @@ const wrapExecuteT = @import("worker.zig").wrapExecuteT;
 /// const Generator = struct {
 ///     buf: [255]u8,
 ///     len: u8,
-///     task: t.Async.Task(*@This()),
+///     task: t.async.Task(*@This()),
 ///
 ///     pub fn execute(self: *Generator) ![]u8 {
 ///         if (self.len < 64) return error.NeedMoreBytes;
@@ -141,17 +141,17 @@ const wrapExecuteT = @import("worker.zig").wrapExecuteT;
 pub fn asyncTask(
     self: Env,
     executor_ptr: anytype,
-    task: *Async.Task(@TypeOf(executor_ptr)),
+    task: *async.Task(@TypeOf(executor_ptr)),
 ) !Promise {
-    const Task = Async.Task(@TypeOf(executor_ptr));
+    const Task = async.Task(@TypeOf(executor_ptr));
 
     const prom, const deferred = try self.promise();
 
-    var async_work: ?Async.Worker = undefined;
+    var async_work: ?async.Worker = undefined;
     try n.napi_create_async_work(
         self,
         prom.ptr,
-        try Async.Resource.default.nameVal(self),
+        try async.Resource.default.nameVal(self),
         @ptrCast(&Task.execute),
         @ptrCast(&Task.complete),
         task,
@@ -176,12 +176,12 @@ pub fn asyncTask(
 /// https://nodejs.org/docs/latest/api/n-api.html#napi_create_async_work
 pub fn asyncWorker(
     self: Env,
-    comptime execute: Async.Execute,
-    comptime complete: Async.Complete,
-    resource: ?Async.Resource,
-) !Async.Worker {
-    const async_resource = resource orelse Async.Resource.default;
-    var ptr: ?Async.Worker = null;
+    comptime execute: async.Execute,
+    comptime complete: async.Complete,
+    resource: ?async.Resource,
+) !async.Worker {
+    const async_resource = resource orelse async.Resource.default;
+    var ptr: ?async.Worker = null;
     try n.napi_create_async_work(
         self,
         async_resource.ptr,
@@ -199,14 +199,14 @@ pub fn asyncWorker(
 pub fn asyncWorkerT(
     self: Env,
     ctx: anytype,
-    comptime execute: Async.ExecuteT(@TypeOf(ctx)),
-    comptime complete: Async.CompleteT(@TypeOf(ctx)),
-    resource: ?Async.Resource,
-) !Async.Worker {
+    comptime execute: async.ExecuteT(@TypeOf(ctx)),
+    comptime complete: async.CompleteT(@TypeOf(ctx)),
+    resource: ?async.Resource,
+) !async.Worker {
     const T = @TypeOf(ctx);
-    const async_resource = resource orelse Async.Resource.default;
+    const async_resource = resource orelse async.Resource.default;
 
-    var ptr: ?Async.Worker = null;
+    var ptr: ?async.Worker = null;
     try n.napi_create_async_work(
         self,
         async_resource.ptr,

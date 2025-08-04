@@ -110,7 +110,7 @@ const TaskPromise = struct {
 pub const AsyncWorker = struct {
     deferred: t.Deferred,
     input: [:0]u8,
-    work: t.Async.Worker,
+    work: t.async.Worker,
 
     fn deinit(self: *AsyncWorker, env: t.Env) void {
         const allo = dba.allocator();
@@ -134,8 +134,8 @@ pub const AsyncWorker = struct {
     fn workIt(
         env: t.Env,
         input: t.Val,
-        comptime execute_it: t.Async.ExecuteT(*AsyncWorker),
-        comptime complete_it: t.Async.CompleteT(*AsyncWorker),
+        comptime execute_it: t.async.ExecuteT(*AsyncWorker),
+        comptime complete_it: t.async.CompleteT(*AsyncWorker),
     ) !t.Promise {
         const promise, const deferred = try env.promise();
 
@@ -229,7 +229,7 @@ pub const Promises = struct {
 pub const AsyncTask = struct {
     const ExecuteOnly = struct {
         result: f64,
-        task: t.Async.Task(*@This()),
+        task: t.async.Task(*@This()),
 
         fn schedule(self: *ExecuteOnly, env: t.Env, result: f64) !t.Promise {
             self.* = .{ .result = result, .task = undefined };
@@ -249,7 +249,7 @@ pub const AsyncTask = struct {
 
     const WithComplete = struct {
         result: f64,
-        task: t.Async.Task(*@This()),
+        task: t.async.Task(*@This()),
 
         fn schedule(self: *WithComplete, env: t.Env, result: f64) !t.Promise {
             self.* = .{ .result = result, .task = undefined };
@@ -275,7 +275,7 @@ pub const AsyncTask = struct {
     const WithCleanup = struct {
         on_cleanup: t.Ref(t.Fn),
         result: f64,
-        task: t.Async.Task(*@This()),
+        task: t.async.Task(*@This()),
 
         fn schedule(self: *WithCleanup, call: t.Call) !t.Promise {
             const result, const on_cleanup = try call.argsAs(.{ f64, t.Fn });
@@ -309,7 +309,7 @@ pub const AsyncTask = struct {
 
     const WithErrConvert = struct {
         on_cleanup: t.Ref(t.Fn),
-        task: t.Async.Task(*@This()),
+        task: t.async.Task(*@This()),
 
         fn schedule(
             self: *WithErrConvert,

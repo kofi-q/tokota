@@ -16,7 +16,7 @@ comptime {
 
 pub fn hello(name: tokota.TinyStr(16)) ![]const u8 {
     var buf: [32]u8 = undefined;
-    return std.fmt.bufPrint(&buf, "{}, how be?", .{name});
+    return std.fmt.bufPrint(&buf, "{f}, how be?", .{name});
 }
 
 pub fn add(a: i32, b: i32) i32 {

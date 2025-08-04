@@ -27,7 +27,7 @@ pub fn todosForUser(call: t.Call, user_id: u32, limit: u32) !t.Promise {
 const Runner = struct {
     arena: std.heap.ArenaAllocator,
     limit: usize,
-    task: t.Async.Task(*@This()),
+    task: t.async.Task(*@This()),
     user_id: u32,
 
     const Todo = struct {
