@@ -370,20 +370,6 @@ describe("arg & return-type inference", () => {
     assert.throws(() => api.returnIntU128(-1n), /ExpectedUnsignedBigInt/);
 
     switch (RUNTIME) {
-      case "bun": {
-        console.error(
-          "🚨 [SKIP] Bun: napi_get_value_bigint_words - incorrect word count " +
-            "returned when buffer length specified.",
-        );
-
-        assert.doesNotThrow(
-          () => api.returnIntU128(api.U128_MAX + 1n),
-          /BigIntOverflow/,
-        );
-
-        break;
-      }
-
       case "deno": {
         console.error(
           "🚨 [SKIP] Deno: napi_get_value_bigint_words - incorrect word count " +
