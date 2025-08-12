@@ -11,14 +11,9 @@ jobs:
   lib-build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Install ZVM
-        run: |
-          curl https://raw.githubusercontent.com/tristanisham/zvm/master/install.sh | bash
-          echo PATH="~/.zvm/self:~/.zvm/bin:$PATH" >> "$GITHUB_ENV"
-
-      - name: Install Zig
-        run: |
-          zvm install master
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.0-dev.1283+1fcaf90dd
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -71,14 +66,9 @@ jobs:
           - 4873:4873
 
     steps:
-      - name: Install ZVM
-        run: |
-          curl https://raw.githubusercontent.com/tristanisham/zvm/master/install.sh | bash
-          echo PATH="~/.zvm/self:~/.zvm/bin:$PATH" >> "$GITHUB_ENV"
-
-      - name: Install Zig
-        run: |
-          zvm install master
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.0-dev.1283+1fcaf90dd
 
       - name: Checkout
         uses: actions/checkout@v4
