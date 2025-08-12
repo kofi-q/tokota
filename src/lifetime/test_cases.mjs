@@ -125,22 +125,7 @@ export function registerTests(addon) {
       refCount = Refs.tempRefDecrementCount();
       assert.equal(refCount, 0);
 
-      switch (RUNTIME) {
-        case "bun":
-          // [NOTE] Not necessarily a bad thing, just different from the NodeJS
-          // reference implementation.
-          console.error(
-            "🚨 [SKIP] Bun: napi_reference_unref doesn't return an error " +
-              "when the ref count is already 0.",
-          );
-          refCount = Refs.tempRefDecrementCount();
-          assert.equal(refCount, 0);
-          break;
-
-        default:
-          assert.throws(Refs.tempRefDecrementCount);
-          break;
-      }
+      assert.throws(Refs.tempRefDecrementCount);
 
       Refs.tempRefDelete();
       assert.deepEqual(array, ["foo", "bar"]);
