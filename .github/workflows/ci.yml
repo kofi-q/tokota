@@ -1,7 +1,11 @@
 name: Commit Checks
 run-name: ${{ github.ref }} - Commit Checks
 
-on: push
+on:
+  push:
+    branches: main
+  pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
