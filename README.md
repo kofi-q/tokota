@@ -61,7 +61,7 @@ Building and packaging addons with Tokota should work wherever Zig works...in th
 
 ### Zig
 
-Tokota requires Zig version `v0.15.0-dev.1283+1fcaf90dd` or later (tested up to the version in [`.zigversion`](.zigversion)).
+Tokota requires Zig version `v0.15.1` or later (tested up to the version in [`.zigversion`](.zigversion)).
 
 ### NodeJS
 
@@ -81,7 +81,7 @@ However, I've had issues with versions prior to **`v16.0.0`** (most prohibitivel
 
 ### Bun
 
-`› Last tested with v1.2.18`
+`› Last tested with v1.2.20`
 
 Bun provides an implementation of the Node-API.
 

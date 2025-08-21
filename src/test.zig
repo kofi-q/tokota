@@ -66,7 +66,7 @@ pub fn returnStringNullTerminatedPtr() [*:0]const u8 {
 }
 
 pub fn returnStringNullTerminatedPtrNonConst() [*:0]u8 {
-    return @constCast(@ptrCast("foo"));
+    return @ptrCast(@constCast("foo"));
 }
 
 pub fn returnSliceOfStrings(

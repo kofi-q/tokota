@@ -126,5 +126,5 @@ pub fn generate(
         \\
     );
 
-    return output.getWritten();
+    return output.written();
 }
