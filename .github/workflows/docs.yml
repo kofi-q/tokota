@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: mlugg/setup-zig@v2
         with:
-          version: 0.15.0-dev.1283+1fcaf90dd
+          version: 0.15.1
 
       - name: Checkout
         uses: actions/checkout@v4

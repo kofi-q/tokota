@@ -187,8 +187,8 @@ pub fn typedArray(
     byte_offset: usize,
     elem_count: usize,
 ) !TypedArray(data_type) {
-    const typed_data_ptr: []data_type.Zig() = @alignCast(
-        @ptrCast(self.data[byte_offset..]),
+    const typed_data_ptr: []data_type.Zig() = @ptrCast(
+        @alignCast(self.data[byte_offset..]),
     );
 
     var ptr: ?Val = null;

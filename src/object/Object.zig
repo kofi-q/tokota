@@ -113,7 +113,7 @@ pub const Tag = packed struct(u128) {
                 \\require a struct type with a `comptime js_tag: Object.Tag` field.
             , .{@typeName(T)}));
 
-            break :blk @alignCast(@ptrCast(f.default_value_ptr.?));
+            break :blk @ptrCast(@alignCast(f.default_value_ptr.?));
         } else @compileError(comptimePrint(
             \\Invalid type: {s}
             \\`Object.[wrap|unwrap]()` and `[Env|Val].external() methods
