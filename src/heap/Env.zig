@@ -242,12 +242,10 @@ fn cleanupProxy(
             };
 
             @call(.always_inline, cb, args) catch |err| switch (Ctx) {
-                void => log.err("Cleanup callback failed - {s}", .{
-                    @errorName(err),
-                }),
-                else => log.err("[ {s} ] Cleanup callback failed: {s}", .{
+                void => log.err("Cleanup callback failed - {t}", .{err}),
+                else => log.err("[ {s} ] Cleanup callback failed: {t}", .{
                     @typeName(Ctx),
-                    @errorName(err),
+                    err,
                 }),
             };
         }
@@ -268,12 +266,10 @@ fn cleanupAsyncProxy(
             };
 
             @call(.always_inline, cb, args) catch |err| switch (Ctx) {
-                void => log.err("Async cleanup callback failed - {s}", .{
-                    @errorName(err),
-                }),
-                else => log.err("[ {s} ] Async cleanup callback failed: {s}", .{
+                void => log.err("Async cleanup callback failed - {t}", .{err}),
+                else => log.err("[ {s} ] Async cleanup callback failed: {t}", .{
                     @typeName(Ctx),
-                    @errorName(err),
+                    err,
                 }),
             };
         }

@@ -73,8 +73,8 @@ pub fn napiCb(comptime impl: anytype, comptime opts: CbOptions) n.Callback {
                         .code = @errorName(err),
                         .msg = std.fmt.bufPrintZ(
                             &buf_err,
-                            "[ {s} ] JS argument conversion failed",
-                            .{@errorName(err)},
+                            "[ {t} ] JS argument conversion failed",
+                            .{err},
                         ) catch buf_err ++ "...(truncated)",
                     }),
                 }
@@ -96,8 +96,8 @@ pub fn napiCb(comptime impl: anytype, comptime opts: CbOptions) n.Callback {
                         .code = @errorName(err),
                         .msg = std.fmt.bufPrintZ(
                             &buf_err,
-                            "[ {s} ] - Error in native function",
-                            .{@errorName(err)},
+                            "[ {t} ] - Error in native function",
+                            .{err},
                         ) catch buf_err ++ "...(truncated)",
                     }),
                 }
@@ -113,8 +113,8 @@ pub fn napiCb(comptime impl: anytype, comptime opts: CbOptions) n.Callback {
                         .code = "ReturnValueConversionFailed",
                         .msg = std.fmt.bufPrintZ(
                             &buf_err,
-                            "[ {s} ] JS return value conversion failed",
-                            .{@errorName(err)},
+                            "[ {t} ] JS return value conversion failed",
+                            .{err},
                         ) catch buf_err ++ "...(truncated)",
                     }),
                 }

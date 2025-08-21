@@ -14,7 +14,7 @@ const comptimePrint = std.fmt.comptimePrint;
 pub fn requireNapiVersion(comptime version: NapiVersion) void {
     if (!options.napi_version.isAtLeast(version)) @compileError(comptimePrint(
         \\[ Node-API Version Mismatch ]
-        \\Expected `.{[0]s}` or greater, got `.{[1]s}`.
+        \\Expected `.{[0]t}` or greater, got `.{[1]t}`.
         \\To use this method, add a `pub const tokota_options: tokota.Options`
         \\declaration to the root source file and set `napi_version`
         \\to `.{[0]s}` or greater.
@@ -23,8 +23,8 @@ pub fn requireNapiVersion(comptime version: NapiVersion) void {
         \\     find the relevant source location.
         \\
     , .{
-        @tagName(version),
-        @tagName(options.napi_version),
+        version,
+        options.napi_version,
     }));
 }
 

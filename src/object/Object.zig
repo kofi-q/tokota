@@ -587,7 +587,7 @@ pub inline fn to(self: Object, comptime Struct: type) !Struct {
             ) catch |err| switch (err) {
                 Err.PendingException => return err,
                 else => {
-                    log.err("[{}] Error at field `{s}` of type `{s}`", .{
+                    log.err("[{t}] Error at field `{s}` of type `{s}`", .{
                         err, field.name, @typeName(Struct),
                     });
 

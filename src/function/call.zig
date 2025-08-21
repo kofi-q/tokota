@@ -278,7 +278,7 @@ fn CallImpl(comptime Self: type) type {
                         .code = @errorName(e),
                         .msg = try std.fmt.bufPrintZ(
                             &buf_err,
-                            "[{}] Argument error at index {d}",
+                            "[{t}] Argument error at index {d}",
                             .{ e, idx },
                         ),
                     });

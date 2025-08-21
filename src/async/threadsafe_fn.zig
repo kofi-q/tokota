@@ -182,7 +182,7 @@ pub fn wrapCallback(
                     .code = @errorName(err),
                     .msg = std.fmt.bufPrintZ(
                         &buf_err,
-                        "[ {} ] Error in Threadsafe Function handler - {s}",
+                        "[ {t} ] Error in Threadsafe Function handler - {s}",
                         .{ err, @typeName(T) },
                     ) catch unreachable,
                 }),
@@ -235,7 +235,7 @@ pub fn wrapProxy(
                     .code = @errorName(err),
                     .msg = std.fmt.bufPrintZ(
                         &buf_err,
-                        "[ {} ] Error in Threadsafe Function handler - {s}",
+                        "[ {t} ] Error in Threadsafe Function handler - {s}",
                         .{ err, @typeName(T) },
                     ) catch unreachable,
                 }),
