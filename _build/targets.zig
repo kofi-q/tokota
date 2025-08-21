@@ -72,19 +72,19 @@ pub fn packageName(
     return b.fmt("{s}{s}", .{
         prefix,
         switch (target.os.tag) {
-            .linux => b.fmt("{s}-{s}-{s}", .{
-                @tagName(target.os.tag),
-                @tagName(target.cpu.arch),
-                @tagName(target.abi),
+            .linux => b.fmt("{t}-{t}-{t}", .{
+                target.os.tag,
+                target.cpu.arch,
+                target.abi,
             }),
-            .windows => b.fmt("{s}-{s}-{s}", .{
-                @tagName(target.os.tag),
-                @tagName(target.cpu.arch),
-                @tagName(win32_runtime),
+            .windows => b.fmt("{t}-{t}-{t}", .{
+                target.os.tag,
+                target.cpu.arch,
+                win32_runtime,
             }),
-            else => b.fmt("{s}-{s}", .{
-                @tagName(target.os.tag),
-                @tagName(target.cpu.arch),
+            else => b.fmt("{t}-{t}", .{
+                target.os.tag,
+                target.cpu.arch,
             }),
         },
     });
