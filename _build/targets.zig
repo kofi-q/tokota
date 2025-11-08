@@ -28,7 +28,6 @@ pub fn nodeCpu(target: std.Target) []const u8 {
 pub fn nodeOs(tag: std.Target.Os.Tag) []const u8 {
     return switch (tag) {
         .macos => "darwin",
-        .solaris => "sunos",
         .windows => "win32",
         else => @tagName(tag),
     };

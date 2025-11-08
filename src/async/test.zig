@@ -4,7 +4,10 @@ const builtin = @import("builtin");
 const t = @import("tokota");
 
 const Dba = std.heap.DebugAllocator(.{});
+const Io = std.Io;
+
 var dba = Dba{};
+var io_threaded: Io.Threaded = undefined;
 
 pub const tokota_options = t.Options{
     .napi_version = .v8,
@@ -15,11 +18,15 @@ comptime {
 }
 
 fn moduleInit(env: t.Env, exports: t.Val) !t.Val {
+    io_threaded = .init(dba.allocator());
     _ = try env.addCleanup({}, moduleDeinit);
+
     return exports;
 }
 
 fn moduleDeinit() !void {
+    io_threaded.deinit();
+
     return switch (dba.deinit()) {
         .ok => {},
         .leak => t.panic("Memory leak detected", null),
@@ -59,13 +66,15 @@ const TaskCallback = struct {
             @errorName(err),
         );
 
+        const io = io_threaded.io();
+
         for ([_][:0]const u8{
             "hey, i just met you",
             "and this is crazy",
             "but, here's my number",
             "so call me, maybe",
         }) |msg| {
-            std.Thread.sleep(10 * std.time.ns_per_ms);
+            try io.sleep(.fromMilliseconds(10), .real);
 
             tsfn.call(msg, .non_blocking) catch |err| switch (err) {
                 t.Err.ThreadsafeFnClosing => return,
@@ -97,7 +106,7 @@ const TaskPromise = struct {
             @errorName(err),
         );
 
-        std.Thread.sleep(10 * std.time.ns_per_ms);
+        try io_threaded.io().sleep(.fromMilliseconds(10), .real);
 
         const msg = "I promise.";
         tsfn.call(msg, .blocking) catch |err| switch (err) {
@@ -156,7 +165,7 @@ pub const AsyncWorker = struct {
     }
 
     fn reverseIt(self: *AsyncWorker) !void {
-        std.Thread.sleep(10 * std.time.ns_per_ms);
+        try io_threaded.io().sleep(.fromMilliseconds(10), .real);
         std.mem.reverse(u8, self.input);
     }
 
@@ -168,7 +177,7 @@ pub const AsyncWorker = struct {
     }
 
     fn ignoreIt(_: *AsyncWorker) !void {
-        std.Thread.sleep(10 * std.time.ns_per_ms);
+        try io_threaded.io().sleep(.fromMilliseconds(10), .real);
     }
 
     fn rejectIt(self: *AsyncWorker, env: t.Env, err: anyerror!void) !void {

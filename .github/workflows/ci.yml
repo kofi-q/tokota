@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: mlugg/setup-zig@v2
         with:
-          version: 0.15.1
+          version: 0.16.0-dev.1246+4b593a6c2
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -72,7 +72,7 @@ jobs:
     steps:
       - uses: mlugg/setup-zig@v2
         with:
-          version: 0.15.1
+          version: 0.16.0-dev.1246+4b593a6c2
 
       - name: Checkout
         uses: actions/checkout@v4

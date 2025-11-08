@@ -54,7 +54,8 @@ const Iterator = struct {
 
         const path_todos = "../_data/todos.json";
         const allo = it.arena.allocator();
-        const raw_json = try cwd().readFileAlloc(allo, path_todos, 26 * 1024);
+        const raw_json = try cwd()
+            .readFileAlloc(path_todos, allo, .limited(26 * 1024));
 
         it.todos = try json.parseFromSliceLeaky([]Todo, allo, raw_json, .{});
 

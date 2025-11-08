@@ -33,7 +33,7 @@ pub fn updateSource(
     emit.step.dependOn(&addon.install.step);
 
     const libnode_zig = b.addUpdateSourceFiles();
-    _ = libnode_zig.addCopyFileToSource(emit.captureStdOut(), src_path);
+    _ = libnode_zig.addCopyFileToSource(emit.captureStdOut(.{}), src_path);
     libnode_zig.step.dependOn(&emit.step);
 
     return libnode_zig;

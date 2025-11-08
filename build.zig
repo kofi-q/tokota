@@ -133,7 +133,7 @@ pub fn build(b: *std.Build) void {
             .imports = &.{
                 .{ .name = "testing", .module = mod_testing },
             },
-            .link_libc = (target.result.os.tag == .linux) and config.link_libc,
+            .link_libc = (target.result.os.tag == .linux),
             .mode = mode,
             .name = "test.addon",
             .output_dir = .{ .custom = b.pathJoin(&.{ "..", dirpath }) },
@@ -334,10 +334,6 @@ const examples = struct {
 const tests = struct {
     const Config = struct {
         dir: []const u8,
-
-        /// Linux-only setting.
-        /// Spawning threads segfaults on Linux without linking libc.
-        link_libc: bool = false,
     };
 
     const configs = [_]Config{
@@ -345,7 +341,7 @@ const tests = struct {
         .{ .dir = "array" },
         .{ .dir = "array_buffer" },
         .{ .dir = "array_buffer/v10" },
-        .{ .dir = "async", .link_libc = true },
+        .{ .dir = "async" },
         .{ .dir = "date" },
         .{ .dir = "error" },
         .{ .dir = "function" },

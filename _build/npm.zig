@@ -711,8 +711,11 @@ fn parsePackageJson(
     ));
     defer file.close();
 
+    var io_threaded = std.Io.Threaded.init(allo);
+    defer io_threaded.deinit();
+
     var buf: [1024]u8 = undefined;
-    var file_reader = file.reader(&buf);
+    var file_reader = file.reader(io_threaded.io(), &buf);
 
     var json_reader = std.json.Reader.init(allo, &file_reader.interface);
     const raw = std.json.parseFromTokenSourceLeaky(

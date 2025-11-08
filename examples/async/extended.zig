@@ -53,7 +53,9 @@ const Runner = struct {
         if (self.user_id == 13) return error.UnluckyNumber;
 
         const allo = self.arena.allocator();
-        const raw_json = try cwd().readFileAlloc(allo, path_todos, 26 * 1024);
+        const raw_json = try cwd()
+            .readFileAlloc(path_todos, allo, .limited(26 * 1024));
+
         const todos = try json.parseFromSliceLeaky([]Todo, allo, raw_json, .{});
 
         var len_filtered: usize = 0;

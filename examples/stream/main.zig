@@ -70,8 +70,13 @@ const path_todos = "../_data/todos.json";
 
 /// Main loop for the background thread, split out for simpler error handling.
 fn fetchChunks(user_id: u32, task: *Task) !void {
-    const raw_json = try cwd().readFileAlloc(allo, path_todos, 26 * 1024);
+    const raw_json = try cwd()
+        .readFileAlloc(path_todos, allo, .limited(26 * 1024));
     defer allo.free(raw_json);
+
+    var io_threaded = std.Io.Threaded.init(allo);
+    defer io_threaded.deinit();
+    const io = io_threaded.io();
 
     const todos = try json.parseFromSlice([]Todo, allo, raw_json, .{});
     defer todos.deinit();
@@ -81,7 +86,7 @@ fn fetchChunks(user_id: u32, task: *Task) !void {
             continue;
         }
 
-        std.Thread.sleep(100 * time.ns_per_ms);
+        try io.sleep(.fromMilliseconds(100), .real);
         if (!task.active.load(.acquire)) {
             break;
         }
