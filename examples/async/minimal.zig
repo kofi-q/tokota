@@ -37,7 +37,8 @@ const Runner = struct {
         defer arena.deinit();
 
         const allo = arena.allocator();
-        const raw_json = try cwd().readFileAlloc(allo, path_todos, 26 * 1024);
+        const raw_json = try cwd()
+            .readFileAlloc(path_todos, allo, .limited(26 * 1024));
 
         const todos = try json.parseFromSliceLeaky([]Todo, allo, raw_json, .{
             .ignore_unknown_fields = true,

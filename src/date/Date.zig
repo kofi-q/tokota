@@ -46,11 +46,6 @@ const Date = @This();
 /// Unix timestamp, in milliseconds.
 timestamp_ms: f64,
 
-/// Creates a new `Date` from the current system timestamp.
-pub fn now() Date {
-    return .{ .timestamp_ms = @floatFromInt(std.time.milliTimestamp()) };
-}
-
 /// Creates a new `Date` from the given nanosecond timestamp.
 pub fn fromTimestampNs(ns: i128) Date {
     return .{ .timestamp_ms = @floatFromInt(@divFloor(ns, std.time.ns_per_ms)) };

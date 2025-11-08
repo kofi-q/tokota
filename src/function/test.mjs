@@ -27,6 +27,7 @@ describe("functions", () => {
      * @this {unknown}
      */
     function reverb(input) {
+      // @ts-ignore
       assert.strictEqual(this, globalThis);
       return `${input}...${input.substring(0, 2)}...${input.substring(0, 1)}`;
     }
@@ -42,6 +43,7 @@ describe("functions", () => {
      * @this {unknown}
      */
     function concat(a, b) {
+      // @ts-ignore
       assert.strictEqual(this, globalThis);
       return `${a}: ${b}`;
     }
@@ -118,10 +120,10 @@ describe("functions", () => {
 
 describe("closures", () => {
   test("binds native data to function", () => {
-    const stopTimer = addon.Closures.startTimer();
+    const stopTimer = addon.Closures.startTimer(1000n);
     assert.equal(typeof stopTimer, "function");
 
-    const elapsedNs = stopTimer();
-    assert(elapsedNs > 1n);
+    const elapsedNs = stopTimer(1200n);
+    assert.equal(200n, elapsedNs);
   });
 });

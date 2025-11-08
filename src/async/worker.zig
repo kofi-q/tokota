@@ -66,7 +66,7 @@ pub fn ExecuteT(comptime Ctx: type) type {
 pub fn wrapExecute(comptime func: Execute) n.AsyncExecute {
     const Cb = struct {
         fn proxy(env: Env, _: ?AnyPtr) callconv(.c) void {
-            func() catch |err| switch (err) {
+            func() catch |err| switch (@as(anyerror, err)) {
                 Err.PendingException => {},
                 else => env.throwOrPanic(.{
                     .code = @errorName(err),
@@ -88,16 +88,17 @@ pub fn wrapExecuteT(
 ) n.AsyncExecute {
     const Cb = struct {
         fn proxy(env: Env, ctx: ?Ctx) callconv(.c) void {
-            @call(.always_inline, func, .{ctx.?}) catch |err| switch (err) {
-                Err.PendingException => {},
-                else => env.throwOrPanic(.{
-                    .code = @errorName(err),
-                    .msg = std.fmt.comptimePrint(
-                        "[ {s}:async:worker:{s} ] Task execution failed",
-                        .{ @typeName(Ctx), options.lib_name },
-                        .{options.lib_name},
-                    ),
-                }),
+            @call(.always_inline, func, .{ctx.?}) catch |err| {
+                switch (@as(anyerror, err)) {
+                    Err.PendingException => {},
+                    else => env.throwOrPanic(.{
+                        .code = @errorName(err),
+                        .msg = std.fmt.comptimePrint(
+                            "[ {s}:async:worker:{s} ] Task execution failed",
+                            .{ @typeName(Ctx), options.lib_name },
+                        ),
+                    }),
+                }
             };
         }
     };
@@ -110,7 +111,7 @@ pub fn wrapComplete(comptime func: Complete) n.AsyncComplete {
         fn proxy(env: Env, status: n.Status, _: ?AnyPtr) callconv(.c) void {
             @call(.always_inline, func, .{
                 env, status.check(),
-            }) catch |err| switch (err) {
+            }) catch |err| switch (@as(anyerror, err)) {
                 Err.PendingException => {},
                 else => env.throwOrPanic(.{
                     .code = @errorName(err),
@@ -134,7 +135,7 @@ pub fn wrapCompleteT(
         fn proxy(env: Env, status: n.Status, ctx: ?Ctx) callconv(.c) void {
             @call(.always_inline, func, .{
                 ctx.?, env, status.check(),
-            }) catch |err| switch (err) {
+            }) catch |err| switch (@as(anyerror, err)) {
                 Err.PendingException => {},
                 else => env.throwOrPanic(.{
                     .code = @errorName(err),

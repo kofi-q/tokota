@@ -92,15 +92,15 @@ pub const Closures = struct {
         dba.allocator().destroy(timer);
     }
 
-    pub fn startTimer() !StopFn {
+    pub fn startTimer(at: i128) !StopFn {
         const timer = try dba.allocator().create(Timer);
-        timer.* = .{ .start_time = std.time.nanoTimestamp() };
+        timer.* = .{ .start_time = at };
 
         return .init(timer, .with(deinit));
     }
 
-    fn stopTimer(call: t.CallT(*Timer)) !i128 {
+    fn stopTimer(call: t.CallT(*Timer), at: i128) !i128 {
         const timer = try call.data() orelse return error.MissingFnData;
-        return std.time.nanoTimestamp() - timer.start_time;
+        return at - timer.start_time;
     }
 };
