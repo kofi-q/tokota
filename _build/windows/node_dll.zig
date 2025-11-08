@@ -39,7 +39,7 @@ pub fn updateSource(
     emit.step.dependOn(&addon.install.step);
 
     const node_def = b.addUpdateSourceFiles();
-    _ = node_def.addCopyFileToSource(emit.captureStdOut(), def_path);
+    _ = node_def.addCopyFileToSource(emit.captureStdOut(.{}), def_path);
     node_def.step.dependOn(&emit.step);
 
     return node_def;
