@@ -30,7 +30,7 @@ const Val = @import("../root.zig").Val;
 /// > Input strings longer than `buffer_size` will be truncated without error.
 pub fn TinyStr(comptime buffer_size: u8) type {
     return struct {
-        buf: [buffer_size + 1]u8,
+        buf: [@as(u9, buffer_size) + 1]u8,
         len: u8,
 
         pub fn format(self: @This(), writer: *Writer) Writer.Error!void {
