@@ -42,7 +42,7 @@ pub const Options = struct {
     ///
     /// Logging for this scope can be filtered, if needed
     /// (see `log_scope_levels` in `std.Options`).
-    log_scope: @Type(.enum_literal) = .tokota,
+    log_scope: @EnumLiteral() = .tokota,
 
     /// Controls which Node-API methods are available at
     /// compile-time and, by extension, which JS runtime versions your addon will

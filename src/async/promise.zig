@@ -35,8 +35,12 @@ pub const Promise = struct {
     /// https://nodejs.org/docs/latest/api/n-api.html#napi_create_reference
     pub fn ref(self: Promise, initial_ref_count: u32) !Ref(Promise) {
         var ptr: ?Ref(Promise) = null;
-        try n.napi_create_reference(self.env, self.ptr, initial_ref_count, &ptr)
-            .check();
+        try n.napi_create_reference(
+            self.env,
+            self.ptr,
+            initial_ref_count,
+            @ptrCast(&ptr),
+        ).check();
 
         return ptr.?;
     }

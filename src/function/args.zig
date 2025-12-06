@@ -8,6 +8,24 @@ const Fn = @import("Fn.zig");
 const napiCb = @import("callback.zig").napiCb;
 const Val = @import("../root.zig").Val;
 
+pub fn ArgOrArgsTuple(comptime types: anytype) type {
+    if (@TypeOf(types) == type) return types;
+
+    if (!isKnownLengthIndexable(types)) @compileError(
+        \\Expected a single type or a tuple/array/slice of type values.
+    );
+
+    return @Tuple(&types);
+}
+
+pub fn ArgsTuple(comptime types: anytype) type {
+    if (!isKnownLengthIndexable(types)) @compileError(
+        \\Expected a tuple/array/slice of type values.
+    );
+
+    return @Tuple(&types);
+}
+
 pub inline fn argValues(self: Env, args: anytype) ![]const Val {
     return switch (@TypeOf(args)) {
         []Val,
@@ -52,4 +70,13 @@ pub inline fn argTupleValues(
     }
 
     return values[0..];
+}
+
+pub inline fn isKnownLengthIndexable(comptime x: anytype) bool {
+    return switch (@typeInfo((@TypeOf(x)))) {
+        .@"struct" => |info| info.is_tuple,
+        .array => true,
+        .pointer => |p| p.size == .slice,
+        else => false,
+    };
 }

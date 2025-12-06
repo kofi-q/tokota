@@ -12,39 +12,27 @@ const Val = @import("../root.zig").Val;
 pub fn FromBitFlagsOpts(comptime PackedStruct: type) type {
     const struct_info = @typeInfo(PackedStruct).@"struct";
 
-    const StructField = std.builtin.Type.StructField;
-    var rename_fields: [struct_info.fields.len]StructField = undefined;
-    var exclude_fields: [struct_info.fields.len]StructField = undefined;
+    if (struct_info.layout != .@"packed") @compileError(
+        "expected packed struct, got " ++ @typeName(PackedStruct),
+    );
 
-    comptime for (0..rename_fields.len) |i| {
-        rename_fields[i] = .{
-            .alignment = @alignOf(?[:0]const u8),
-            .default_value_ptr = &@as(?[:0]const u8, null),
-            .is_comptime = false,
-            .name = struct_info.fields[i].name,
-            .type = ?[:0]const u8,
-        };
-        exclude_fields[i] = .{
-            .alignment = 0,
-            .default_value_ptr = &false,
-            .is_comptime = false,
-            .name = struct_info.fields[i].name,
-            .type = bool,
-        };
-    };
+    const names = std.meta.fieldNames(PackedStruct);
 
-    const Renames = @Type(.{ .@"struct" = .{
-        .decls = &.{},
-        .fields = &rename_fields,
-        .is_tuple = false,
-        .layout = .auto,
-    } });
-    const Excludes = @Type(.{ .@"struct" = .{
-        .decls = &.{},
-        .fields = &exclude_fields,
-        .is_tuple = false,
-        .layout = .@"packed",
-    } });
+    const Renames = @Struct(
+        .auto,
+        null,
+        names,
+        &@splat(?[:0]const u8),
+        &@splat(.{ .default_value_ptr = &@as(?[:0]const u8, null) }),
+    );
+
+    const Excludes = @Struct(
+        .@"packed",
+        null,
+        names,
+        &@splat(bool),
+        &@splat(.{ .default_value_ptr = &false }),
+    );
 
     return struct {
         /// Enum values to exclude from the converted type.
@@ -132,8 +120,9 @@ pub fn FromBitFlags(
     const field_count_max =
         struct_info.fields.len + opts.extra_fields.len + 1;
 
-    const EnumField = std.builtin.Type.EnumField;
-    comptime var fields: [field_count_max]EnumField = undefined;
+    const BackingInt = struct_info.backing_integer.?;
+    comptime var names: [field_count_max][]const u8 = undefined;
+    comptime var values: [field_count_max]BackingInt = undefined;
     comptime var count: usize = 0;
     comptime var bit_index: usize = 0;
 
@@ -144,14 +133,13 @@ pub fn FromBitFlags(
 
                 if (@field(opts.exclude, struct_field.name)) continue;
 
-                fields[count] = .{
-                    .name = @field(
-                        opts.rename,
-                        struct_field.name,
-                    ) orelse struct_field.name,
+                names[count] = @field(
+                    opts.rename,
+                    struct_field.name,
+                ) orelse struct_field.name;
 
-                    .value = 1 << bit_index,
-                };
+                values[count] = 1 << bit_index;
+
                 count += 1;
             },
             else => |Int| bit_index += @typeInfo(Int).int.bits,
@@ -159,20 +147,17 @@ pub fn FromBitFlags(
     };
 
     comptime for (opts.extra_fields) |entry| {
-        const name, const value = entry;
-        fields[count] = .{
-            .name = name,
-            .value = @as(struct_info.backing_integer.?, @bitCast(value)),
-        };
+        names[count] = entry[0];
+        values[count] = @as(BackingInt, @bitCast(entry[1]));
         count += 1;
     };
 
-    return @Type(.{ .@"enum" = .{
-        .decls = &.{},
-        .fields = fields[0..count],
-        .is_exhaustive = false,
-        .tag_type = struct_info.backing_integer.?,
-    } });
+    return @Enum(
+        BackingInt,
+        .nonexhaustive,
+        names[0..count],
+        values[0..count],
+    );
 }
 
 /// Wrapper type for converting Zig enum tags to/from JS string values, for
