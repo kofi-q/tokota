@@ -231,12 +231,17 @@ pub fn wrapProxy(
         else => T,
     };
 
+    const AbiArg = switch (Arg) {
+        void => ?AnyPtrConst,
+        else => |A| A,
+    };
+
     const Handler = struct {
         fn cb(
             env_opt: ?Env,
             cb_js_opt: ?Val,
             ctx: Ctx,
-            arg: Arg,
+            arg: AbiArg,
         ) callconv(.c) void {
             // These are null if the Node env is in the process of getting
             // unloaded. If that's the case, nothing to do here.
@@ -245,9 +250,14 @@ pub fn wrapProxy(
 
             var buf_err: [128]u8 = undefined;
 
+            const tsfn_arg = switch (Arg) {
+                void => {},
+                else => arg,
+            };
+
             const args = switch (T) {
-                void => .{ env, arg, cb_js },
-                else => .{ ctx, env, arg, cb_js },
+                void => .{ env, tsfn_arg, cb_js },
+                else => .{ ctx, env, tsfn_arg, cb_js },
             };
             @call(.always_inline, func, args) catch |err| switch (err) {
                 Err.PendingException => {},
