@@ -60,6 +60,7 @@
 
 const std = @import("std");
 
+const ArgOrArgsTuple = @import("./args.zig").ArgOrArgsTuple;
 const argValues = @import("./args.zig").argValues;
 const Env = @import("../root.zig").Env;
 const Finalizer = @import("../root.zig").Finalizer;
@@ -92,7 +93,7 @@ pub fn addFinalizer(self: Fn, finalizer: Finalizer) !Ref(Fn) {
         finalizer.data,
         finalizer.cb.?,
         finalizer.hint,
-        &ref_ptr,
+        @ptrCast(&ref_ptr),
     ).check();
 
     return ref_ptr.?;
@@ -157,8 +158,12 @@ pub fn callThis(self: Fn, this: Val, arg_or_args: anytype) !Val {
 /// https://nodejs.org/docs/latest/api/n-api.html#napi_create_reference
 pub fn ref(self: Fn, initial_ref_count: u32) !Ref(Fn) {
     var ptr: ?Ref(Fn) = null;
-    try n.napi_create_reference(self.env, self.ptr, initial_ref_count, &ptr)
-        .check();
+    try n.napi_create_reference(
+        self.env,
+        self.ptr,
+        initial_ref_count,
+        @ptrCast(&ptr),
+    ).check();
 
     return ptr.?;
 }
@@ -194,7 +199,7 @@ pub fn Typed(comptime arg_types: anytype, comptime ReturnType: type) type {
                 finalizer.data,
                 finalizer.cb.?,
                 finalizer.hint,
-                &ref_ptr,
+                @ptrCast(&ref_ptr),
             ).check();
 
             return ref_ptr.?;
@@ -234,7 +239,7 @@ pub fn Typed(comptime arg_types: anytype, comptime ReturnType: type) type {
                 self.env,
                 self.ptr,
                 initial_ref_count,
-                &ptr,
+                @ptrCast(&ptr),
             ).check();
 
             return ptr.?;
@@ -244,44 +249,4 @@ pub fn Typed(comptime arg_types: anytype, comptime ReturnType: type) type {
             return val.functionTyped(env, Args, ReturnType);
         }
     };
-}
-
-fn ArgOrArgsTuple(comptime types: anytype) type {
-    if (@TypeOf(types) == type) {
-        return types;
-    }
-
-    const count = switch (@typeInfo((@TypeOf(types)))) {
-        .@"struct" => |info| blk: {
-            if (!info.is_tuple) @compileError(
-                \\Expected a single type or a tuple/array of type values.
-            );
-
-            break :blk info.fields.len;
-        },
-        .array => |info| info.len,
-        else => @compileError(
-            \\Expected a single type or a tuple/array of type values.
-        ),
-    };
-
-    var fields: [count]std.builtin.Type.StructField = undefined;
-    for (types, 0..) |T, i| {
-        fields[i] = std.builtin.Type.StructField{
-            .alignment = @alignOf(T),
-            .default_value_ptr = null,
-            .is_comptime = false,
-            .name = std.fmt.comptimePrint("{d}", .{i}),
-            .type = T,
-        };
-    }
-
-    return @Type(.{
-        .@"struct" = .{
-            .decls = &.{},
-            .fields = &fields,
-            .is_tuple = true,
-            .layout = .auto,
-        },
-    });
 }

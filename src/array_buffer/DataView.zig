@@ -48,7 +48,7 @@ pub fn addFinalizer(self: DataView, finalizer: Finalizer) !Ref(DataView) {
         finalizer.data,
         finalizer.cb.?,
         finalizer.hint,
-        &ref_ptr,
+        @ptrCast(&ref_ptr),
     ).check();
 
     return ref_ptr.?;
@@ -65,8 +65,12 @@ pub fn addFinalizer(self: DataView, finalizer: Finalizer) !Ref(DataView) {
 /// https://nodejs.org/docs/latest/api/n-api.html#napi_create_reference
 pub fn ref(self: DataView, initial_ref_count: u32) !Ref(DataView) {
     var ptr: ?Ref(DataView) = null;
-    try n.napi_create_reference(self.env, self.ptr, initial_ref_count, &ptr)
-        .check();
+    try n.napi_create_reference(
+        self.env,
+        self.ptr,
+        initial_ref_count,
+        @ptrCast(&ptr),
+    ).check();
 
     return ptr.?;
 }

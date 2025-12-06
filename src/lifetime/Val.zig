@@ -20,7 +20,12 @@ pub fn ref(self: Val, env: Env, initial_ref_count: u32) !Ref(Val) {
     requireNapiVersion(.v10);
 
     var ptr: ?Ref(Val) = null;
-    try n.napi_create_reference(env, self, initial_ref_count, &ptr).check();
+    try n.napi_create_reference(
+        env,
+        self,
+        initial_ref_count,
+        @ptrCast(&ptr),
+    ).check();
 
     return ptr.?;
 }

@@ -1,5 +1,6 @@
 const std = @import("std");
 
+const ArgsTuple = @import("./args.zig").ArgsTuple;
 const Class = @import("../root.zig").Class;
 const Env = @import("../root.zig").Env;
 const n = @import("../napi.zig");
@@ -362,42 +363,6 @@ fn CallImpl(comptime Self: type) type {
         pub fn thisUnwrap(self: Self, comptime T: type) !?T {
             const this_obj = try self.thisOrNull() orelse return null;
             return this_obj.unwrap(T);
-        }
-
-        fn ArgsTuple(comptime types: anytype) type {
-            const count = switch (@typeInfo((@TypeOf(types)))) {
-                .@"struct" => |info| blk: {
-                    if (!info.is_tuple) @compileError(
-                        \\Expected tuple or array of type values.
-                    );
-
-                    break :blk info.fields.len;
-                },
-                .array => |info| info.len,
-                else => @compileError(
-                    \\Expected tuple or array of type values.
-                ),
-            };
-
-            var fields: [count]std.builtin.Type.StructField = undefined;
-            for (types, 0..) |T, i| {
-                fields[i] = std.builtin.Type.StructField{
-                    .alignment = @alignOf(T),
-                    .default_value_ptr = null,
-                    .is_comptime = false,
-                    .name = std.fmt.comptimePrint("{d}", .{i}),
-                    .type = T,
-                };
-            }
-
-            return @Type(.{
-                .@"struct" = .{
-                    .decls = &.{},
-                    .fields = &fields,
-                    .is_tuple = true,
-                    .layout = .auto,
-                },
-            });
         }
     };
 }

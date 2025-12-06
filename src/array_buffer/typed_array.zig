@@ -53,7 +53,7 @@ pub fn TypedArray(comptime data_type: ArrayType) type {
                 finalizer.data,
                 finalizer.cb.?,
                 finalizer.hint,
-                &ref_ptr,
+                @ptrCast(&ref_ptr),
             ).check();
 
             return ref_ptr.?;
@@ -79,7 +79,7 @@ pub fn TypedArray(comptime data_type: ArrayType) type {
                 self.env,
                 self.ptr,
                 initial_ref_count,
-                &ptr,
+                @ptrCast(&ptr),
             ).check();
 
             return ptr.?;

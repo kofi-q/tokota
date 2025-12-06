@@ -71,8 +71,12 @@ pub fn new(self: Class, args: anytype) !Object {
 /// https://nodejs.org/docs/latest/api/n-api.html#napi_create_reference
 pub fn ref(self: Class, initial_ref_count: u32) !Ref(Class) {
     var ptr: ?Ref(Class) = null;
-    try n.napi_create_reference(self.env, self.ptr, initial_ref_count, &ptr)
-        .check();
+    try n.napi_create_reference(
+        self.env,
+        self.ptr,
+        initial_ref_count,
+        @ptrCast(&ptr),
+    ).check();
 
     return ptr.?;
 }

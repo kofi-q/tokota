@@ -166,7 +166,7 @@ pub fn addFinalizer(self: Object, finalizer: Finalizer) !Ref(Object) {
         finalizer.data,
         finalizer.cb.?,
         finalizer.hint,
-        &ref_ptr,
+        @ptrCast(&ref_ptr),
     ).check();
 
     return ref_ptr.?;
@@ -492,8 +492,12 @@ pub fn keysExtended(
 /// https://nodejs.org/docs/latest/api/n-api.html#napi_create_reference
 pub fn ref(self: Object, initial_ref_count: u32) !Ref(Object) {
     var ptr: ?Ref(Object) = null;
-    try n.napi_create_reference(self.env, self.ptr, initial_ref_count, &ptr)
-        .check();
+    try n.napi_create_reference(
+        self.env,
+        self.ptr,
+        initial_ref_count,
+        @ptrCast(&ptr),
+    ).check();
 
     return ptr.?;
 }
@@ -647,7 +651,7 @@ pub fn wrap(
         instance,
         finalizer_partial.finalizer.cb,
         finalizer_partial.finalizer.hint,
-        if (finalizer_partial.finalizer.cb) |_| &ref_ptr else null,
+        if (finalizer_partial.finalizer.cb) |_| @ptrCast(&ref_ptr) else null,
     ).check();
 
     return ref_ptr;

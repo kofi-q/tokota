@@ -37,7 +37,7 @@ pub fn threadsafeFn(
             else => ctx,
         },
         tsfn.wrapProxy(@TypeOf(ctx), Arg, proxy),
-        &ptr,
+        @ptrCast(&ptr),
     ).check();
 
     return ptr.?;

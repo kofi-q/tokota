@@ -391,7 +391,7 @@ pub fn threadsafeFn(
             else => ctx,
         },
         tsfn.wrapCallback(@TypeOf(ctx), Arg, handler),
-        &ptr,
+        @ptrCast(&ptr),
     ).check();
 
     return ptr.?;
