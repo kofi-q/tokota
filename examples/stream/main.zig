@@ -41,6 +41,9 @@ pub fn todoStream(call: t.Call, user_id: u32, on_chunk: t.Fn) !t.Fn {
             .finalizer = .with(task, deinit),
         }),
     };
+    errdefer task.on_chunk.abort() catch |err| {
+        log.err("Unable to abort threadsafe fn: {}", .{err});
+    };
 
     const thread = try std.Thread.spawn(.{}, run, .{ user_id, task });
     thread.detach();
@@ -52,8 +55,8 @@ pub fn todoStream(call: t.Call, user_id: u32, on_chunk: t.Fn) !t.Fn {
 fn run(user_id: u32, task: *Task) void {
     // Release the `ThreadsafeFn` when the stream is closed, to allow the main
     // JS loop to exit.
-    defer task.on_chunk.release(.release) catch |e| {
-        log.err("Unable to release async task: {}", .{e});
+    defer task.on_chunk.release() catch |e| {
+        log.err("Unable to release threadsafe fn: {}", .{e});
     };
 
     log.info("Starting stream...", .{});
@@ -82,14 +85,10 @@ fn fetchChunks(user_id: u32, task: *Task) !void {
     defer todos.deinit();
 
     for (todos.value) |*todo| {
-        if (todo.user_id != user_id) {
-            continue;
-        }
+        if (todo.user_id != user_id) continue;
 
         try io.sleep(.fromMilliseconds(100), .real);
-        if (!task.active.load(.acquire)) {
-            break;
-        }
+        if (!task.active.load(.acquire)) break;
 
         // Call the `ThreadsafeFn` any number of times with the previously
         // specified argument type. See `sendChunk()`.
