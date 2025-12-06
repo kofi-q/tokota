@@ -61,7 +61,7 @@ const TaskCallback = struct {
     }
 
     fn execute(tsfn: t.threadsafe.Fn([*:0]const u8)) !void {
-        defer tsfn.release(.release) catch |err| t.panic(
+        defer tsfn.release() catch |err| t.panic(
             "unable to release threadsafe fn",
             @errorName(err),
         );
@@ -90,6 +90,10 @@ const TaskPromise = struct {
         const tsfn = try env
             .threadsafeFn(deferred, [*:0]const u8, complete, .{});
 
+        errdefer tsfn.abort() catch |err| {
+            std.log.err("unable to abort threadsafe fn: {}", .{err});
+        };
+
         const thread = try std.Thread.spawn(.{}, execute, .{tsfn});
         thread.detach();
 
@@ -101,7 +105,7 @@ const TaskPromise = struct {
     }
 
     fn execute(tsfn: t.threadsafe.FnT(t.Deferred, [*:0]const u8)) !void {
-        defer tsfn.release(.release) catch |err| t.panic(
+        defer tsfn.release() catch |err| t.panic(
             "unable to release threadsafe fn",
             @errorName(err),
         );

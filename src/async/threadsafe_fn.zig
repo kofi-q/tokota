@@ -90,6 +90,17 @@ pub fn FnT(comptime T: type, comptime Arg: type) type {
     const NapiThreadsafeFn = opaque {
         const Self = *const @This();
 
+        /// https://nodejs.org/docs/latest/api/n-api.html#napi_release_threadsafe_function
+        pub fn abort(self: Self) !void {
+            return n.napi_release_threadsafe_function(
+                @ptrCast(self),
+                .abort,
+            ).check() catch |err| switch (err) {
+                Err.ThreadsafeFnClosing => {},
+                else => err,
+            };
+        }
+
         /// https://nodejs.org/docs/latest/api/n-api.html#napi_acquire_threadsafe_function
         pub fn acquire(self: Self) !void {
             try n.napi_acquire_threadsafe_function(self).check();
@@ -127,10 +138,10 @@ pub fn FnT(comptime T: type, comptime Arg: type) type {
         }
 
         /// https://nodejs.org/docs/latest/api/n-api.html#napi_release_threadsafe_function
-        pub fn release(self: Self, mode: ReleaseMode) !void {
+        pub fn release(self: Self) !void {
             return n.napi_release_threadsafe_function(
                 @ptrCast(self),
-                mode,
+                .release,
             ).check() catch |err| switch (err) {
                 Err.ThreadsafeFnClosing => {},
                 else => err,
@@ -163,19 +174,29 @@ pub fn wrapCallback(
         else => T,
     };
 
+    const AbiArg = switch (Arg) {
+        void => ?AnyPtrConst,
+        else => |A| A,
+    };
+
     const Handler = struct {
-        fn cb(opt_env: ?Env, _: ?Val, ctx: Ctx, arg: Arg) callconv(.c) void {
+        fn cb(opt_env: ?Env, _: ?Val, ctx: Ctx, arg: AbiArg) callconv(.c) void {
             // This is null if the Node env is in the process of getting
             // unloaded. If that's the case, nothing to do here.
             const env = opt_env orelse return;
 
             var buf_err: [128]u8 = undefined;
 
-            const args = switch (T) {
-                void => .{ env, arg },
-                else => .{ ctx, env, arg },
+            const tsfn_arg = switch (Arg) {
+                void => {},
+                else => arg,
             };
-            @call(.always_inline, func, args) catch |err| switch (err) {
+
+            const cb_args = switch (T) {
+                void => .{ env, tsfn_arg },
+                else => .{ ctx, env, tsfn_arg },
+            };
+            @call(.always_inline, func, cb_args) catch |err| switch (err) {
                 Err.PendingException => {},
 
                 else => env.throwOrPanic(.{
