@@ -188,7 +188,9 @@ pub fn linkNodeStubLinux(
 ) void {
     const mode = lib.root_module.optimize.?;
     const target = lib.root_module.resolved_target;
-    lib.linkLibrary(node_stub_so.build(b, mode, target, opts.dep_tokota));
+    lib.root_module.linkLibrary(
+        node_stub_so.build(b, mode, target, opts.dep_tokota),
+    );
 }
 
 /// Links a stub DLL containing Node-API symbols to enable compiling addon
@@ -207,6 +209,6 @@ pub fn linkNodeStubWin32(
         opts.dep_tokota,
     );
     lib.step.dependOn(&node_dll_step.step);
-    lib.addLibraryPath(node_dll_path.dirname());
-    lib.linkSystemLibrary2("node", .{});
+    lib.root_module.addLibraryPath(node_dll_path.dirname());
+    lib.root_module.linkSystemLibrary("node", .{});
 }

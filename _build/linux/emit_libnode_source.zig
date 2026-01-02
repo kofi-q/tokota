@@ -23,8 +23,15 @@ pub fn emit() !void {
         break :blk symbols[0..len].*;
     };
 
+    const allo = std.heap.smp_allocator;
+
+    var io_threaded = std.Io.Threaded.init(allo, .{});
+    defer io_threaded.deinit();
+
+    const io = io_threaded.ioBasic();
+
     var buf: [1024]u8 = undefined;
-    var std_out = std.fs.File.stdout().writer(&buf);
+    var std_out = std.Io.File.stdout().writer(io, &buf);
 
     for (symbols) |symbol| try std_out.interface.print(
         \\export fn {s}() void {{}}
