@@ -1,4 +1,3 @@
-const cwd = @import("std").fs.cwd;
 const std = @import("std");
 const json = @import("std").json;
 
@@ -52,10 +51,15 @@ const Iterator = struct {
         // Extract the iterator data attached in `todoIterator()`.
         const it = try call.data() orelse return error.MissingFnData;
 
-        const path_todos = "../_data/todos.json";
         const allo = it.arena.allocator();
-        const raw_json = try cwd()
-            .readFileAlloc(path_todos, allo, .limited(26 * 1024));
+
+        var io_threaded = std.Io.Threaded.init(allo, .{});
+        defer io_threaded.deinit();
+        const io = io_threaded.io();
+
+        const path_todos = "../_data/todos.json";
+        const raw_json = try std.Io.Dir.cwd()
+            .readFileAlloc(io, path_todos, allo, .limited(26 * 1024));
 
         it.todos = try json.parseFromSliceLeaky([]Todo, allo, raw_json, .{});
 

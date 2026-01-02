@@ -1,5 +1,4 @@
 const ArenaAllocator = @import("std").heap.ArenaAllocator;
-const cwd = @import("std").fs.cwd;
 const json = @import("std").json;
 const smp_allocator = std.heap.smp_allocator;
 const std = @import("std");
@@ -37,8 +36,13 @@ const Runner = struct {
         defer arena.deinit();
 
         const allo = arena.allocator();
-        const raw_json = try cwd()
-            .readFileAlloc(path_todos, allo, .limited(26 * 1024));
+
+        var io_threaded = std.Io.Threaded.init(allo, .{});
+        defer io_threaded.deinit();
+        const io = io_threaded.ioBasic();
+
+        const raw_json = try std.Io.Dir.cwd()
+            .readFileAlloc(io, path_todos, allo, .limited(26 * 1024));
 
         const todos = try json.parseFromSliceLeaky([]Todo, allo, raw_json, .{
             .ignore_unknown_fields = true,
