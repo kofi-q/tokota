@@ -91,9 +91,9 @@ fn createAddonC(
         }),
     });
 
-    lib.addCSourceFile(.{ .file = root_file });
+    lib.root_module.addCSourceFile(.{ .file = root_file });
     lib.linker_allow_shlib_undefined = true;
-    lib.addIncludePath(deps.napi_headers.path("include"));
+    lib.root_module.addIncludePath(deps.napi_headers.path("include"));
     lib.root_module.addCMacro("NAPI_VERSION", "8");
 
     const install = b.addInstallFileWithDir(
@@ -124,10 +124,10 @@ fn createAddonCpp(
         }),
     });
 
-    lib.addCSourceFile(.{ .file = root_file });
+    lib.root_module.addCSourceFile(.{ .file = root_file });
     lib.linker_allow_shlib_undefined = true;
-    lib.addIncludePath(deps.napi_headers.path("include"));
-    lib.addIncludePath(deps.napi_cpp.path("."));
+    lib.root_module.addIncludePath(deps.napi_headers.path("include"));
+    lib.root_module.addIncludePath(deps.napi_cpp.path("."));
     lib.root_module.addCMacro("NAPI_VERSION", "8");
 
     const install = b.addInstallFileWithDir(

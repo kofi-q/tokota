@@ -1,4 +1,3 @@
-const cwd = @import("std").fs.cwd;
 const std = @import("std");
 const json = @import("std").json;
 const time = @import("std").time;
@@ -73,13 +72,13 @@ const path_todos = "../_data/todos.json";
 
 /// Main loop for the background thread, split out for simpler error handling.
 fn fetchChunks(user_id: u32, task: *Task) !void {
-    const raw_json = try cwd()
-        .readFileAlloc(path_todos, allo, .limited(26 * 1024));
-    defer allo.free(raw_json);
-
-    var io_threaded = std.Io.Threaded.init(allo);
+    var io_threaded = std.Io.Threaded.init(allo, .{});
     defer io_threaded.deinit();
     const io = io_threaded.io();
+
+    const raw_json = try std.Io.Dir.cwd()
+        .readFileAlloc(io, path_todos, allo, .limited(26 * 1024));
+    defer allo.free(raw_json);
 
     const todos = try json.parseFromSlice([]Todo, allo, raw_json, .{});
     defer todos.deinit();

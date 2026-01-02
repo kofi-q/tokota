@@ -2,6 +2,11 @@ const std = @import("std");
 const allo = std.heap.smp_allocator;
 
 pub fn main() !void {
+    var io_threaded = std.Io.Threaded.init(allo, .{});
+    defer io_threaded.deinit();
+
+    const io = io_threaded.ioBasic();
+
     var child = std.process.Child.init(
         &.{ "npm", "adduser", "--registry", "http://localhost:4873" },
         allo,
@@ -10,32 +15,44 @@ pub fn main() !void {
     child.stderr_behavior = .Pipe;
     child.stdin_behavior = .Pipe;
 
-    try child.spawn();
+    try child.spawn(io);
 
-    var buf: [1024]u8 = undefined;
-    var std_out = child.stdout.?;
-    var output_len = try std_out.read(&buf);
+    const stdout = blk: {
+        var buf: [64]u8 = undefined;
+        var r = child.stdout.?.reader(io, &buf);
+        break :blk &r.interface;
+    };
 
-    while (output_len > 0) : (output_len = try std_out.read(&buf)) {
-        if (std.mem.startsWith(u8, buf[0..output_len], "Username:")) {
-            try child.stdin.?.writeAll("tokota\n");
-            break;
-        }
+    var stdin_writer = child.stdin.?.writer(io, &.{});
+    const stdin = &stdin_writer.interface;
+
+    try stdout.fillMore();
+    try stdout.fillMore();
+    while (stdout.bufferedLen() > 0) : (try stdout.fillMore()) {
+        _ = std.mem.find(u8, stdout.buffered(), "Username:") orelse continue;
+
+        try stdin.writeAll("tokota\n");
+        stdout.tossBuffered();
+        break;
     }
 
-    while (output_len > 0) : (output_len = try std_out.read(&buf)) {
-        if (std.mem.startsWith(u8, buf[0..output_len], "Password:")) {
-            try child.stdin.?.writeAll("tokota\n");
-            break;
-        }
+    try stdout.fillMore();
+    while (stdout.bufferedLen() > 0) : (try stdout.fillMore()) {
+        _ = std.mem.find(u8, stdout.buffered(), "Password:") orelse continue;
+
+        try stdin.writeAll("tokota\n");
+        stdout.tossBuffered();
+        break;
     }
 
-    while (output_len > 0) : (output_len = try std_out.read(&buf)) {
-        if (std.mem.startsWith(u8, buf[0..output_len], "Email:")) {
-            try child.stdin.?.writeAll("tokota@example.com\n");
-            break;
-        }
+    try stdout.fillMore();
+    while (stdout.bufferedLen() > 0) : (try stdout.fillMore()) {
+        _ = std.mem.find(u8, stdout.buffered(), "Email:") orelse continue;
+
+        try stdin.writeAll("tokota@example.com\n");
+        stdout.tossBuffered();
+        break;
     }
 
-    _ = try child.wait();
+    _ = try child.wait(io);
 }

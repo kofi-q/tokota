@@ -3,7 +3,7 @@ const tokota = @import("tokota");
 /// Override default options with a public `tokota_options` declaration in the
 /// root file of the module.
 pub const tokota_options = tokota.Options{
-    .lib_name = "example-promise",
+    .lib_name = "example-async",
     .napi_version = .v8,
 };
 
