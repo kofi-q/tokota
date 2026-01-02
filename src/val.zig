@@ -385,13 +385,13 @@ fn EnumConverter(comptime Enum: type) type {
 
     return struct {
         pub fn fromJs(env: Env, val: Val) !Enum {
-            return std.meta.intToEnum(
+            return std.enums.fromInt(
                 Enum,
                 val.int(TagInt, env) catch |err| return switch (err) {
                     error.IntegerOutOfRange => error.InvalidEnumTag,
                     else => err,
                 },
-            );
+            ) orelse error.InvalidEnumTag;
         }
     };
 }
