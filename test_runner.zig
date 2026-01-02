@@ -9,11 +9,17 @@ pub const tokota_options = Options{
 };
 
 pub fn main() !void {
+    const allo = std.heap.smp_allocator;
+    var io_threaded = std.Io.Threaded.init(allo, .{});
+    defer io_threaded.deinit();
+
+    const io = io_threaded.ioBasic();
+
     var buf_stderr: [1024]u8 = undefined;
-    var std_err = std.fs.File.stderr().writer(&buf_stderr);
+    var std_err = std.Io.File.stderr().writer(io, &buf_stderr);
 
     var buf_stdout: [1024]u8 = undefined;
-    var std_out = std.fs.File.stdout().writer(&buf_stdout);
+    var std_out = std.Io.File.stdout().writer(io, &buf_stdout);
 
     var had_failures = false;
 
