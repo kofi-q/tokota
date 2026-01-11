@@ -227,16 +227,16 @@ fn depsJs(b: *std.Build, steps: *const Steps) void {
 
 fn fmt(b: *std.Build, steps: *const Steps) void {
     const eslint = b.addSystemCommand(&.{ "pnpm", "eslint" });
-    if (!isCi()) eslint.addArg("--fix");
+    if (!isCi(b)) eslint.addArg("--fix");
     eslint.step.dependOn(steps.deps_js);
 
     const prettier = b.addSystemCommand(&.{ "pnpm", "prettier" });
-    prettier.addArg(if (isCi()) "--check" else "--write");
+    prettier.addArg(if (isCi(b)) "--check" else "--write");
     prettier.addArg("src");
     prettier.step.dependOn(steps.deps_js);
 
     const zig_fmt = b.addFmt(.{
-        .check = isCi(),
+        .check = isCi(b),
         .paths = &.{"src"},
     });
 
@@ -304,8 +304,8 @@ fn docs(
     return &docs_install.step;
 }
 
-fn isCi() bool {
-    return std.process.hasNonEmptyEnvVarConstant("CI");
+fn isCi(b: *std.Build) bool {
+    return b.graph.environ_map.get("CI") != null;
 }
 
 const examples = struct {

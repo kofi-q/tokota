@@ -303,7 +303,7 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
             pkg_name,
         }));
 
-        const pkg_clean = b.addRemoveDirTree(pkg_dir);
+        const pkg_clean = base.addDirRemove(b, pkg_dir);
         pkg_files.step.dependOn(&pkg_clean.step);
         addon.install.step.dependOn(&pkg_clean.step);
 
@@ -438,7 +438,7 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
             main_pkg_name,
         }));
 
-        const pkg_clean = b.addRemoveDirTree(pkg_dir);
+        const pkg_clean = base.addDirRemove(b, pkg_dir);
         pkg_files.step.dependOn(&pkg_clean.step);
 
         const package_install = b.addInstallDirectory(.{
@@ -698,11 +698,7 @@ fn parsePackageJson(
     path: std.Build.LazyPath,
 ) struct { std.json.Value, PackageJson } {
     const allo = arena.allocator();
-
-    var io_threaded = std.Io.Threaded.init(allo, .{});
-    defer io_threaded.deinit();
-
-    const io = io_threaded.ioBasic();
+    const io = b.graph.io;
 
     const file_path = path
         .getPath3(b, null)

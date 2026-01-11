@@ -1,21 +1,16 @@
 const std = @import("std");
 const allo = std.heap.smp_allocator;
 
-pub fn main() !void {
-    var io_threaded = std.Io.Threaded.init(allo, .{});
-    defer io_threaded.deinit();
+pub fn main(init: std.process.Init) !void {
+    const io = init.io;
 
-    const io = io_threaded.ioBasic();
-
-    var child = std.process.Child.init(
-        &.{ "npm", "adduser", "--registry", "http://localhost:4873" },
-        allo,
-    );
-    child.stdout_behavior = .Pipe;
-    child.stderr_behavior = .Pipe;
-    child.stdin_behavior = .Pipe;
-
-    try child.spawn(io);
+    var child = try std.process.spawn(io, .{
+        .argv = &.{ "npm", "adduser", "--registry", "http://localhost:4873" },
+        .stderr = .pipe,
+        .stdin = .pipe,
+        .stdout = .pipe,
+        .environ_map = init.environ_map,
+    });
 
     const stdout = blk: {
         var buf: [64]u8 = undefined;

@@ -53,7 +53,7 @@ const Runner = struct {
 
         const allo = self.arena.allocator();
 
-        var io_threaded = std.Io.Threaded.init(allo, .{});
+        var io_threaded = std.Io.Threaded.init(allo, .{ .environ = .empty });
         defer io_threaded.deinit();
         const io = io_threaded.io();
 

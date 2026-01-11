@@ -39,7 +39,7 @@ pub fn create(b: *std.Build, publish: *std.Build.Step) E2e {
         ),
     };
 
-    const registry_clean = b.addRemoveDirTree(b.path("registry/packages"));
+    const registry_clean = base.addDirRemove(b, b.path("registry/packages"));
     e2e.registry_clean.dependOn(&registry_clean.step);
 
     const registry_start = b.addSystemCommand(&.{ "pnpm", "start" });
@@ -57,10 +57,11 @@ pub fn create(b: *std.Build, publish: *std.Build.Step) E2e {
     e2e.registry_login.dependOn(&registry_login.step);
 
     {
-        const client_clean_build = b.addRemoveDirTree(b.path("client/build"));
+        const client_clean_build = base.addDirRemove(b, b.path("client/build"));
         e2e.client_clean.dependOn(&client_clean_build.step);
 
-        const client_clean_deps = b.addRemoveDirTree(
+        const client_clean_deps = base.addDirRemove(
+            b,
             b.path("client/node_modules"),
         );
         e2e.client_clean.dependOn(&client_clean_deps.step);

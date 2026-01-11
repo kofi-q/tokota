@@ -8,43 +8,44 @@ pub const tokota_options = Options{
     .napi_version = .v10,
 };
 
-pub fn main() !void {
-    const allo = std.heap.smp_allocator;
-    var io_threaded = std.Io.Threaded.init(allo, .{});
-    defer io_threaded.deinit();
+// [FIXME] No longer printing test names for failed test cases.
+pub fn main(init: std.process.Init) !void {
+    const io = init.io;
 
-    const io = io_threaded.ioBasic();
+    var stderr = blk: {
+        var buf: [1024]u8 = undefined;
+        var writer = std.Io.File.stderr().writer(io, &buf);
+        break :blk &writer.interface;
+    };
 
-    var buf_stderr: [1024]u8 = undefined;
-    var std_err = std.Io.File.stderr().writer(io, &buf_stderr);
-
-    var buf_stdout: [1024]u8 = undefined;
-    var std_out = std.Io.File.stdout().writer(io, &buf_stdout);
+    var stdout = blk: {
+        var buf: [1024]u8 = undefined;
+        var writer = std.Io.File.stdout().writer(io, &buf);
+        break :blk &writer.interface;
+    };
 
     var had_failures = false;
 
     for (builtin.test_functions) |t| {
         t.func() catch |err| {
             had_failures = true;
-            try std_err.interface.print(
-                "  " ++ icon.fail ++ " {s}: " ++ color.red("{}") ++ "\n",
-                .{ t.name, err },
-            );
+            try stderr.print("  {s} {s}: " ++ color.red("{}") ++ "\n", .{
+                icon.fail, t.name, err,
+            });
             continue;
         };
 
-        try std_out.interface.print("  " ++ icon.pass ++ " {s}\n", .{t.name});
+        try stdout.print("  " ++ icon.pass ++ " {s}\n", .{t.name});
     }
 
-    if (had_failures) {
-        try std_err.interface.print("{s} One or more tests failed.\n", .{icon.fail});
+    if (had_failures) return stderr.print(
+        "{s} One or more tests failed.\n",
+        .{icon.fail},
+    );
 
-        return;
-    }
-
-    try std_out.interface.print("{s} Done\n", .{icon.pass});
-    try std_out.interface.flush();
-    try std_err.interface.flush();
+    try stdout.print("{s} Done\n", .{icon.pass});
+    try stdout.flush();
+    try stderr.flush();
 }
 
 const icon = struct {
