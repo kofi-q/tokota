@@ -18,7 +18,7 @@ comptime {
 }
 
 fn moduleInit(env: t.Env, exports: t.Val) !t.Val {
-    io_threaded = .init(dba.allocator(), .{});
+    io_threaded = .init(dba.allocator(), .{ .environ = .empty });
     _ = try env.addCleanup({}, moduleDeinit);
 
     return exports;

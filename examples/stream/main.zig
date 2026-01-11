@@ -72,7 +72,7 @@ const path_todos = "../_data/todos.json";
 
 /// Main loop for the background thread, split out for simpler error handling.
 fn fetchChunks(user_id: u32, task: *Task) !void {
-    var io_threaded = std.Io.Threaded.init(allo, .{});
+    var io_threaded = std.Io.Threaded.init(allo, .{ .environ = .empty });
     defer io_threaded.deinit();
     const io = io_threaded.io();
 

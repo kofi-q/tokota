@@ -1,5 +1,6 @@
 const std = @import("std");
 const tokota = @import("tokota");
+const base = @import("base");
 
 const e2e_build = @import("build.e2e.zig");
 
@@ -64,10 +65,10 @@ pub fn build(b: *std.Build) !void {
     build_js.step.dependOn(step_clean);
     step_build_js.dependOn(&build_js.step);
 
-    const clean_js = b.addRemoveDirTree(b.path("build"));
+    const clean_js = base.addDirRemove(b, b.path("build"));
     step_clean.dependOn(&clean_js.step);
 
-    const clean_publish = b.addRemoveDirTree(b.path("zig-out/publish"));
+    const clean_publish = base.addDirRemove(b, b.path("zig-out/publish"));
     step_clean.dependOn(&clean_publish.step);
 
     const e2e = e2e_build.create(b, step_publish);

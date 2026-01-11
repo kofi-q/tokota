@@ -30,7 +30,7 @@ pub fn emit() !void {
 
     const allo = std.heap.smp_allocator;
 
-    var io_threaded = std.Io.Threaded.init(allo, .{});
+    var io_threaded = std.Io.Threaded.init(allo, .{ .environ = .empty });
     defer io_threaded.deinit();
 
     const io = io_threaded.ioBasic();
