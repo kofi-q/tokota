@@ -3,6 +3,7 @@
 *.node
 node_modules
 zig-out
+zig-pkg
 
 # IDE - VSCode
 .vscode/*
