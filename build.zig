@@ -4,6 +4,7 @@ const base = @import("base");
 
 pub const _build = @import("_build/root.zig");
 pub const Addon = _build.Addon;
+pub const napi_forward = _build.napi_forward;
 pub const node_dll = _build.node_dll;
 pub const node_stub_so = _build.node_stub_so;
 pub const npm = _build.npm;
@@ -26,9 +27,16 @@ pub fn build(b: *std.Build) void {
         .test_zig = b.step("test:zig", "Run native unit tests"),
         .typecheck = b.step("typecheck", "Run JS type checks"),
         .symbols = b.step("symbols", "Generate Node-API symbol stubs"),
+        .symbols_check = b.step(
+            "symbols:check",
+            "Fail if generated Node-API symbol stubs are out of date",
+        ),
     };
 
+    steps.check.dependOn(steps.symbols);
+
     steps.tests.dependOn(steps.fmt);
+    steps.tests.dependOn(steps.symbols);
     steps.tests.dependOn(steps.test_bun);
     steps.tests.dependOn(steps.test_deno);
     steps.tests.dependOn(steps.test_node);
@@ -36,6 +44,8 @@ pub fn build(b: *std.Build) void {
     steps.tests.dependOn(steps.typecheck);
 
     steps.test_ci.dependOn(steps.fmt);
+    steps.test_ci.dependOn(steps.symbols);
+    steps.test_ci.dependOn(steps.symbols_check);
     steps.test_ci.dependOn(steps.test_zig);
     steps.test_ci.dependOn(steps.typecheck);
 
@@ -47,9 +57,9 @@ pub fn build(b: *std.Build) void {
     var dep_tokota_internal = std.Build.Dependency{ .builder = b };
 
     b.addNamedLazyPath(node_dll.def_name, b.path(node_dll.def_path));
+    b.addNamedLazyPath(napi_forward.src_name, b.path(napi_forward.src_path));
     b.addNamedLazyPath(node_stub_so.src_name, b.path(node_stub_so.src_path));
 
-    // [TODO] Add CI checks for up-to-date stubs.
     steps.symbols.dependOn(&node_dll.updateSource(
         b,
         steps.check,
@@ -62,6 +72,26 @@ pub fn build(b: *std.Build) void {
         mode,
         &dep_tokota_internal,
     ).step);
+    steps.symbols.dependOn(&napi_forward.updateSource(
+        b,
+        steps.check,
+        mode,
+        &dep_tokota_internal,
+    ).step);
+
+    const symbols_diff = b.addSystemCommand(&.{
+        "git",
+        "diff",
+        "--exit-code",
+        "--",
+    });
+    symbols_diff.addArgs(&.{
+        node_stub_so.src_path,
+        node_dll.def_path,
+        napi_forward.src_path,
+    });
+    symbols_diff.step.dependOn(steps.symbols);
+    steps.symbols_check.dependOn(&symbols_diff.step);
 
     depsJs(b, &steps);
     fmt(b, &steps);
@@ -405,4 +435,5 @@ const Steps = struct {
     test_zig: *std.Build.Step,
     typecheck: *std.Build.Step,
     symbols: *std.Build.Step,
+    symbols_check: *std.Build.Step,
 };

@@ -2,6 +2,7 @@
 
 const std = @import("std");
 
+const napi_forward = @import("windows/napi_forward_source.zig");
 const node_dll = @import("windows/node_dll.zig");
 const node_stub_so = @import("linux/node_stub_so.zig");
 const targets = @import("targets.zig");
@@ -250,22 +251,6 @@ fn linkNodeRuntimeLookupWin32(
     lib: *std.Build.Step.Compile,
     dep_tokota: *std.Build.Dependency,
 ) void {
-    const native_target = b.resolveTargetQuery(.{});
-
-    const emit_src = b.addExecutable(.{
-        .name = "emit_napi_forward",
-        .root_module = b.createModule(.{
-            .optimize = lib.root_module.optimize.?,
-            .root_source_file = dep_tokota.path(
-                "_build/windows/emit_napi_forward.zig",
-            ),
-            .target = native_target,
-        }),
-    });
-
-    const emit = b.addRunArtifact(emit_src);
-    const forward_src = emit.captureStdOut(.{ .basename = "napi_forward.zig" });
-
     const obj = b.addObject(.{
         .name = "tokota_napi_forward",
         .root_module = b.createModule(.{
@@ -274,7 +259,7 @@ fn linkNodeRuntimeLookupWin32(
                 .module = dep_tokota.module("tokota"),
             }},
             .optimize = lib.root_module.optimize.?,
-            .root_source_file = forward_src,
+            .root_source_file = dep_tokota.namedLazyPath(napi_forward.src_name),
             .target = lib.root_module.resolved_target,
         }),
     });
