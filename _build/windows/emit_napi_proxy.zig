@@ -9,7 +9,6 @@ const std = @import("std");
 const napi = @import("tokota").napi;
 
 comptime {
-    @setEvalBranchQuota(100_000);
     @import("tokota").exportModule(@This());
 }
 
@@ -18,8 +17,6 @@ pub fn main() !void {
 }
 
 pub fn emit() !void {
-    @setEvalBranchQuota(500_000);
-
     const decls = @typeInfo(napi).@"struct".decls;
 
     const symbols = comptime blk: {
@@ -121,7 +118,7 @@ fn emitSymbolsStruct(w: *std.Io.Writer, comptime symbols: anytype) !void {
 }
 
 fn emitWrappers(w: *std.Io.Writer, comptime symbols: anytype) !void {
-    @setEvalBranchQuota(500_000);
+    @setEvalBranchQuota(10_000);
 
     inline for (symbols) |name| {
         const fn_info = @typeInfo(@TypeOf(@field(napi, name))).@"fn";
