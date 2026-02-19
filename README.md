@@ -138,6 +138,10 @@ pub fn build(b: *std.Build) !void {
         .root_source_file = b.path("src/root.zig"),
         .output_dir = .{ .custom = "../lib" },
 
+        // Resolve N-API symbols from the runtime process image at runtime.
+        // Useful for packaged Electron apps where the .exe name is unknown.
+        // .win32_symbol_resolution = .runtime_lookup,
+
         // Required when targeting non-Node.js runtimes on Windows:
         // .win32_runtime = .bun,
     });

@@ -118,6 +118,36 @@ pub fn build(b: *std.Build) void {
         example_run.dependOn(&node_run.step);
     }
 
+    {
+        const example_dir = b.pathJoin(&.{ examples.dir, "add" });
+
+        const addon = Addon.create(b, .{
+            .mode = mode,
+            .name = "addon.runtime_lookup",
+            .output_dir = .{ .custom = b.pathJoin(&.{ "..", example_dir }) },
+            .root_source_file = b.path(
+                b.pathJoin(&.{ example_dir, "main.zig" }),
+            ),
+            .target = target,
+            .tokota = .{ .dep = &dep_tokota_internal },
+            .win32_symbol_resolution = .runtime_lookup,
+        });
+
+        const node_run = b.addSystemCommand(&.{
+            "node",
+            "-e",
+            "const addon=require('./addon.runtime_lookup.node'); console.log(addon.add(2,3));",
+        });
+        node_run.setCwd(b.path(example_dir));
+        node_run.step.dependOn(&addon.install.step);
+
+        const example_run = b.step(
+            "examples:add:runtime_lookup",
+            "Run add example with runtime Node-API symbol lookup on Windows",
+        );
+        example_run.dependOn(&node_run.step);
+    }
+
     const node_test = b.addSystemCommand(&.{ "node", "--expose-gc", "--test" });
     node_test.setCwd(b.path("."));
     steps.test_node.dependOn(&node_test.step);

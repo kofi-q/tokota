@@ -8,6 +8,16 @@ const targets = @import("targets.zig");
 
 const Addon = @This();
 
+pub const Win32SymbolResolution = enum {
+    /// Link against an import library targeting a hardcoded host executable
+    /// name (`node.exe`, `electron.exe`, etc).
+    import_lib,
+
+    /// Link against a local Zig forwarder that resolves Node-API symbols from
+    /// `libnode.dll`, or from the current process image as fallback.
+    runtime_lookup,
+};
+
 /// The basename of the `.node` output file, based on `Options.name`.
 basename: []const u8,
 
@@ -80,6 +90,9 @@ pub const Options = struct {
     /// https://github.com/ziglang/zig/issues/7049
     win32_runtime: targets.Runtime = .node,
 
+    /// Controls how Node-API symbols are resolved when targeting Windows.
+    win32_symbol_resolution: Win32SymbolResolution = .import_lib,
+
     pub const Tokota = struct {
         /// The tokota build dependency, via `std.Build.dependency()`, if
         /// it is being imported with a name other than `"tokota"`.
@@ -124,10 +137,14 @@ pub fn create(b: *std.Build, opts: Options) Addon {
     });
 
     switch (opts.target.result.os.tag) {
-        .windows => linkNodeStubWin32(b, lib, .{
-            .dep_tokota = opts.tokota.dep,
-            .win32_runtime = opts.win32_runtime,
-        }),
+        .windows => switch (opts.win32_symbol_resolution) {
+            .import_lib => linkNodeStubWin32(b, lib, .{
+                .dep_tokota = opts.tokota.dep,
+                .win32_runtime = opts.win32_runtime,
+                .win32_symbol_resolution = .import_lib,
+            }),
+            .runtime_lookup => linkNodeRuntimeLookupWin32(b, lib, dep_tokota),
+        },
         else => lib.linker_allow_shlib_undefined = true,
     }
 
@@ -161,6 +178,9 @@ pub const LibnodeStubOpts = struct {
     /// calling runtime when first loaded:
     /// https://github.com/ziglang/zig/issues/7049
     win32_runtime: targets.Runtime = .node,
+
+    /// Controls how Node-API symbols are resolved when targeting Windows.
+    win32_symbol_resolution: Win32SymbolResolution = .import_lib,
 };
 
 /// Links a stub library containing Node-API symbols to enable compiling addon
@@ -173,7 +193,19 @@ pub fn linkNodeStub(
 ) void {
     switch (lib.rootModuleTarget().os.tag) {
         .linux => linkNodeStubLinux(b, lib, opts),
-        .windows => linkNodeStubWin32(b, lib, opts),
+        .windows => switch (opts.win32_symbol_resolution) {
+            .import_lib => linkNodeStubWin32(b, lib, opts),
+            .runtime_lookup => {
+                const dep_tokota = opts.dep_tokota orelse b.dependency(
+                    "tokota",
+                    .{
+                        .optimize = lib.root_module.optimize.?,
+                        .target = lib.root_module.resolved_target,
+                    },
+                );
+                linkNodeRuntimeLookupWin32(b, lib, dep_tokota);
+            },
+        },
         else => lib.linker_allow_shlib_undefined = true,
     }
 }
@@ -211,4 +243,41 @@ pub fn linkNodeStubWin32(
     lib.step.dependOn(&node_dll_step.step);
     lib.root_module.addLibraryPath(node_dll_path.dirname());
     lib.root_module.linkSystemLibrary("node", .{});
+}
+
+fn linkNodeRuntimeLookupWin32(
+    b: *std.Build,
+    lib: *std.Build.Step.Compile,
+    dep_tokota: *std.Build.Dependency,
+) void {
+    const native_target = b.resolveTargetQuery(.{});
+
+    const emit_src = b.addExecutable(.{
+        .name = "emit_napi_forward",
+        .root_module = b.createModule(.{
+            .optimize = lib.root_module.optimize.?,
+            .root_source_file = dep_tokota.path(
+                "_build/windows/emit_napi_forward.zig",
+            ),
+            .target = native_target,
+        }),
+    });
+
+    const emit = b.addRunArtifact(emit_src);
+    const forward_src = emit.captureStdOut(.{ .basename = "napi_forward.zig" });
+
+    const obj = b.addObject(.{
+        .name = "tokota_napi_forward",
+        .root_module = b.createModule(.{
+            .imports = &.{.{
+                .name = "tokota",
+                .module = dep_tokota.module("tokota"),
+            }},
+            .optimize = lib.root_module.optimize.?,
+            .root_source_file = forward_src,
+            .target = lib.root_module.resolved_target,
+        }),
+    });
+
+    lib.root_module.addObject(obj);
 }
