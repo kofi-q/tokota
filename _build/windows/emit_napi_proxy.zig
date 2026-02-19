@@ -80,7 +80,7 @@ fn emitHeader(w: *std.Io.Writer) !void {
         \\        "Missing required Node-API symbol: {s}",
         \\        .{symbol},
         \\    );
-        \\    return @ptrCast(proc);
+        \\    return @ptrCast(@alignCast(proc));
         \\}
         \\
         \\fn resolve(

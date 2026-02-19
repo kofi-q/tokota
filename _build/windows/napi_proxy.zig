@@ -20,7 +20,7 @@ fn lookup(comptime Fn: type, module: HMODULE, comptime symbol: [*:0]const u8) *c
         "Missing required Node-API symbol: {s}",
         .{symbol},
     );
-    return @ptrCast(proc);
+    return @ptrCast(@alignCast(proc));
 }
 
 fn resolve(
