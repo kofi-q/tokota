@@ -67,7 +67,7 @@ fn emitHeader(w: *std.Io.Writer) !void {
         \\extern "kernel32" fn GetModuleHandleA(name: ?[*:0]const u8) callconv(.winapi) HMODULE;
         \\extern "kernel32" fn GetProcAddress(module: HMODULE, proc: [*:0]const u8) callconv(.winapi) ?*anyopaque;
         \\
-        \\var symbols_lock: std.Thread.Mutex = .{};
+        \\var symbols_lock: std.atomic.Mutex = .unlocked;
         \\
         \\fn hostModule() HMODULE {
         \\    if (GetModuleHandleA("libnode.dll")) |module| return module;
@@ -90,7 +90,7 @@ fn emitHeader(w: *std.Io.Writer) !void {
         \\) *const Fn {
         \\    if (slot.*) |ptr| return ptr;
         \\
-        \\    symbols_lock.lock();
+        \\    while (!symbols_lock.tryLock()) std.atomic.spinLoopHint();
         \\    defer symbols_lock.unlock();
         \\
         \\    if (slot.*) |ptr| return ptr;
