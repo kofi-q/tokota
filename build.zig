@@ -30,9 +30,9 @@ pub fn build(b: *std.Build) void {
         .test_ci = b.step("test:ci", "Run CI tests"),
         .test_deno = b.step("test:deno", "Run Deno integration tests"),
         .test_node = b.step("test:node", "Run NodeJS integration tests"),
-        .test_win32_addons = b.step(
-            "test:win32:addons",
-            "Cross-compile Windows addons in dynamic and static modes",
+        .test_win = b.step(
+            "test:win",
+            "Cross-compile Windows addons for architecture/runtime matrix",
         ),
         .test_zig = b.step("test:zig", "Run native unit tests"),
         .typecheck = b.step("typecheck", "Run JS type checks"),
@@ -50,14 +50,14 @@ pub fn build(b: *std.Build) void {
     steps.tests.dependOn(steps.test_bun);
     steps.tests.dependOn(steps.test_deno);
     steps.tests.dependOn(steps.test_node);
-    steps.tests.dependOn(steps.test_win32_addons);
+    steps.tests.dependOn(steps.test_win);
     steps.tests.dependOn(steps.test_zig);
     steps.tests.dependOn(steps.typecheck);
 
     steps.test_ci.dependOn(steps.fmt);
     steps.test_ci.dependOn(steps.symbols);
     steps.test_ci.dependOn(steps.symbols_check);
-    steps.test_ci.dependOn(steps.test_win32_addons);
+    steps.test_ci.dependOn(steps.test_win);
     steps.test_ci.dependOn(steps.test_zig);
     steps.test_ci.dependOn(steps.typecheck);
 
@@ -170,34 +170,28 @@ pub fn build(b: *std.Build) void {
         example_build.dependOn(&addon.install.step);
     }
 
-    {
+    inline for ([_]std.Target.Cpu.Arch{ .x86_64, .aarch64 }) |arch| {
         const win32_target = b.resolveTargetQuery(.{
-            .cpu_arch = .x86_64,
+            .cpu_arch = arch,
             .os_tag = .windows,
         });
 
-        const addon_dynamic = Addon.create(b, .{
-            .mode = mode,
-            .name = "test.addon.win32.dynamic",
-            .output_dir = .{ .custom = "../.zig-cache/win32-addon-tests" },
-            .root_source_file = b.path("examples/add/main.zig"),
-            .target = win32_target,
-            .tokota = .{ .dep = &dep_tokota_internal },
-            .win32_runtime = .dynamic,
-        });
+        inline for ([_]targets.Runtime{ .dynamic, .node }) |runtime| {
+            const addon = Addon.create(b, .{
+                .mode = mode,
+                .name = b.fmt("check.addon.win32.{s}.{s}", .{
+                    @tagName(arch),
+                    @tagName(runtime),
+                }),
+                .output_dir = .{ .custom = "../.zig-cache/win32-check" },
+                .root_source_file = b.path("examples/add/main.zig"),
+                .target = win32_target,
+                .tokota = .{ .dep = &dep_tokota_internal },
+                .win32_runtime = runtime,
+            });
 
-        const addon_static = Addon.create(b, .{
-            .mode = mode,
-            .name = "test.addon.win32.node",
-            .output_dir = .{ .custom = "../.zig-cache/win32-addon-tests" },
-            .root_source_file = b.path("examples/add/main.zig"),
-            .target = win32_target,
-            .tokota = .{ .dep = &dep_tokota_internal },
-            .win32_runtime = .node,
-        });
-
-        steps.test_win32_addons.dependOn(&addon_dynamic.install.step);
-        steps.test_win32_addons.dependOn(&addon_static.install.step);
+            steps.test_win.dependOn(&addon.install.step);
+        }
     }
 
     const node_test = b.addSystemCommand(&.{ "node", "--expose-gc", "--test" });
@@ -449,7 +443,7 @@ const Steps = struct {
     test_ci: *std.Build.Step,
     test_deno: *std.Build.Step,
     test_node: *std.Build.Step,
-    test_win32_addons: *std.Build.Step,
+    test_win: *std.Build.Step,
     test_zig: *std.Build.Step,
     typecheck: *std.Build.Step,
     symbols: *std.Build.Step,
