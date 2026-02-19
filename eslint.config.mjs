@@ -10,6 +10,7 @@ const config = tsEsLint.config(
     "**/.zig-cache",
     "**/_build",
     "**/node_modules",
+    "**/zig-pkg",
     "**/zig-out",
     "bench",
     "examples",
