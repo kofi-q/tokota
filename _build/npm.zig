@@ -64,10 +64,6 @@ pub const PackageJson = @import("PackageJson.zig");
 ///            .{ .os_tag = .macos, .cpu_arch = .aarch64 },
 ///            .{ .os_tag = .windows, .cpu_arch = .x86_64 },
 ///        },
-///        .win32_runtimes = .{
-///            .bun = true,
-///            .dynamic = true,
-///        },
 ///    });
 /// }
 /// ```
@@ -98,10 +94,7 @@ pub const PackageJson = @import("PackageJson.zig");
 ///        │   ├─ linux-x86_64-gnu/
 ///        │   │   ├─ addon.node
 ///        │   │   └─ package.json
-///        │   ├─ windows-x86_64-bun/
-///        │   │   ├─ addon.node
-///        │   │   └─ package.json
-///        │   └─ windows-x86_64-node/
+///        │   └─ windows-x86_64/
 ///        │       ├─ addon.node
 ///        │       └─ package.json
 ///        └─ my-addon/
@@ -129,8 +122,7 @@ pub const PackageJson = @import("PackageJson.zig");
 ///   "optionalDependencies": [
 ///     "@my-addon/macos-aarch64",
 ///     "@my-addon/linux-x86_64-gnu",
-///     "@my-addon/windows-x86_64-bun",
-///     "@my-addon/windows-x86_64-node"
+///     "@my-addon/windows-x86_64"
 ///   ]
 /// }
 /// ```
