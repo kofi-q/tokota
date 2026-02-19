@@ -146,40 +146,12 @@ pub fn build(b: *std.Build) void {
             "Run example: '" ++ config.name ++ "'",
         );
         example_run.dependOn(&node_run.step);
-    }
 
-    {
-        const example_dir = b.pathJoin(&.{ examples.dir, "add" });
-
-        const addon = Addon.create(b, .{
-            .mode = mode,
-            .name = "addon.runtime_lookup",
-            .output_dir = .{ .custom = b.pathJoin(&.{ "..", example_dir }) },
-            .root_source_file = b.path(
-                b.pathJoin(&.{ example_dir, "main.zig" }),
-            ),
-            .target = target,
-            .tokota = .{ .dep = &dep_tokota_internal },
-            .win32_runtime = .dynamic,
-        });
-
-        const node_run = b.addSystemCommand(&.{
-            "node",
-            "-e",
-            "const addon=require('./addon.runtime_lookup.node'); console.log(addon.add(2,3));",
-        });
-        node_run.setCwd(b.path(example_dir));
-        node_run.step.dependOn(&addon.install.step);
-
-        const example_run = b.step(
-            "examples:add:runtime_lookup",
-            "Run add example with runtime Node-API symbol lookup on Windows",
-        );
-        example_run.dependOn(&node_run.step);
-
+        // Separate build can be useful for testing cross-compilation, e.g.:
+        // zig build -Dtarget=x86_64-windows examples:add:build
         const example_build = b.step(
-            "examples:add:runtime_lookup:build",
-            "Build add example with runtime Node-API symbol lookup",
+            "examples:" ++ config.name ++ ":build",
+            "Build example: '" ++ config.name ++ "'",
         );
         example_build.dependOn(&addon.install.step);
     }
