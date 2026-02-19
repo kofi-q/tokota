@@ -100,8 +100,18 @@ pub fn generate(
             \\    if (process.versions.electron) return "electron";
             \\
         );
+        if (win32_runtimes.contains(.node)) {
+            try output.writer.writeAll(
+                \\    return "node";
+                \\
+            );
+        } else {
+            try output.writer.writeAll(
+                \\    return null;
+                \\
+            );
+        }
         try output.writer.writeAll(
-            \\    return "node";
             \\  }
             \\
             \\

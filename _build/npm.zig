@@ -66,7 +66,7 @@ pub const PackageJson = @import("PackageJson.zig");
 ///        },
 ///        .win32_runtimes = .{
 ///            .bun = true,
-///            .node = true,
+///            .dynamic = true,
 ///        },
 ///    });
 /// }
@@ -201,8 +201,18 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
         allo_arena,
         opts.targets.len,
     ) catch @panic("OOM");
-    if (opts.win32_runtimes == Options.Win32Runtimes{}) @panic(
-        "At least one target runtime is required for Windows targets",
+    const has_windows_targets = blk: {
+        for (opts.targets) |query| {
+            if (query.os_tag == .windows) break :blk true;
+        }
+        break :blk false;
+    };
+
+    if (has_windows_targets and
+        opts.win32_runtimes == Options.Win32Runtimes{}) @panic("At least one Windows runtime mode is required for Windows targets");
+
+    if (opts.win32_runtimes.dynamic and opts.win32_runtimes.node) @panic(
+        "Windows runtime modes 'dynamic' and 'node' cannot be enabled together",
     );
 
     for (opts.targets) |query| {
@@ -224,6 +234,11 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
         if (opts.win32_runtimes.electron) targets.append(allo_arena, .{
             .query = query,
             .win32_runtime = .electron,
+        }) catch @panic("OOM");
+
+        if (opts.win32_runtimes.dynamic) targets.append(allo_arena, .{
+            .query = query,
+            .win32_runtime = .dynamic,
         }) catch @panic("OOM");
 
         if (opts.win32_runtimes.node) targets.append(allo_arena, .{
@@ -633,26 +648,27 @@ pub const Options = struct {
     /// successfully on the current host.
     targets: []const std.Target.Query,
 
-    /// When targeting Windows, addon binaries need to be linked against a
-    /// specific executable name (node.exe, by default). Override this setting
-    /// to specify different/additional target runtimes to support on Windows.
+    /// Runtime modes to generate for Windows targets.
     ///
-    /// This is a temporary workaround until a better solution is found, or
-    /// until Zig provides delay-load support to enable lazily linking to the
-    /// calling runtime when first loaded:
-    /// https://github.com/ziglang/zig/issues/7049
+    /// `dynamic` is the default and produces runtime-lookup addons that do not
+    /// hardcode a host executable name (closest to node-gyp delay-load
+    /// behavior). Concrete runtimes (`node`, `electron`, `bun`, `deno`) retain
+    /// the legacy import-lib behavior and produce runtime-specific packages.
     ///
-    /// For now, this will result in separate binary packages for each selected
+    /// `dynamic` and `node` are mutually exclusive for package generation.
+    ///
+    /// This will result in separate binary packages for each selected
     /// runtime. The appropriate binary package will be conditionally imported,
     /// by the `addon.js` entrypoint in the main package, based on the detected
     /// runtime - however, all packages matching the user's architecture will
     /// be downloaded from the NPM registry, so keep that in mind for large
     /// binaries.
-    win32_runtimes: Win32Runtimes = .{ .node = true },
+    win32_runtimes: Win32Runtimes = .{ .dynamic = true },
 
     const Win32Runtimes = packed struct {
         bun: bool = false,
         deno: bool = false,
+        dynamic: bool = false,
         electron: bool = false,
         node: bool = false,
     };
