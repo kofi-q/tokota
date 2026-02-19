@@ -160,7 +160,7 @@ pub fn build(b: *std.Build) void {
             ),
             .target = target,
             .tokota = .{ .dep = &dep_tokota_internal },
-            .win32_symbol_resolution = .runtime_lookup,
+            .win32_runtime = .dynamic,
         });
 
         const node_run = b.addSystemCommand(&.{

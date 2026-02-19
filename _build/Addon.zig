@@ -9,16 +9,6 @@ const targets = @import("targets.zig");
 
 const Addon = @This();
 
-pub const Win32SymbolResolution = enum {
-    /// Link against an import library targeting a hardcoded host executable
-    /// name (`node.exe`, `electron.exe`, etc).
-    import_lib,
-
-    /// Link against a local Zig forwarder that resolves Node-API symbols from
-    /// `libnode.dll`, or from the current process image as fallback.
-    runtime_lookup,
-};
-
 /// The basename of the `.node` output file, based on `Options.name`.
 basename: []const u8,
 
@@ -81,18 +71,13 @@ pub const Options = struct {
     /// Optional tokota module configuration.
     tokota: Tokota = .{},
 
-    /// When targeting Windows, the addon needs to be linked against a specific
-    /// executable name (node.exe, by default). Specify a different target
-    /// runtime if the addon will be loaded within a non-Node.js runtime.
+    /// Controls the runtime lookup mode when targeting Windows.
     ///
-    /// This is a temporary workaround until a better solution is found, or
-    /// until Zig provides delay-load support to enable lazily linking to the
-    /// calling runtime when first loaded:
-    /// https://github.com/ziglang/zig/issues/7049
-    win32_runtime: targets.Runtime = .node,
-
-    /// Controls how Node-API symbols are resolved when targeting Windows.
-    win32_symbol_resolution: Win32SymbolResolution = .import_lib,
+    /// - `.dynamic` resolves Node-API symbols from the host process at
+    ///   runtime (default; closest to node-gyp delay-load behavior).
+    /// - Any concrete runtime (`.node`, `.electron`, `.bun`, `.deno`) uses
+    ///   import-lib resolution with a fixed host executable name.
+    win32_runtime: targets.Runtime = .dynamic,
 
     pub const Tokota = struct {
         /// The tokota build dependency, via `std.Build.dependency()`, if
@@ -138,13 +123,12 @@ pub fn create(b: *std.Build, opts: Options) Addon {
     });
 
     switch (opts.target.result.os.tag) {
-        .windows => switch (opts.win32_symbol_resolution) {
-            .import_lib => linkNodeStubWin32(b, lib, .{
+        .windows => switch (opts.win32_runtime) {
+            .dynamic => linkNodeRuntimeLookupWin32(b, lib, dep_tokota),
+            else => linkNodeStubWin32(b, lib, .{
                 .dep_tokota = opts.tokota.dep,
                 .win32_runtime = opts.win32_runtime,
-                .win32_symbol_resolution = .import_lib,
             }),
-            .runtime_lookup => linkNodeRuntimeLookupWin32(b, lib, dep_tokota),
         },
         else => lib.linker_allow_shlib_undefined = true,
     }
@@ -170,18 +154,13 @@ pub const LibnodeStubOpts = struct {
     /// created via std.Build.dependency("tokota")
     dep_tokota: ?*std.Build.Dependency = null,
 
-    /// When targeting Windows, the addon needs to be linked against a specific
-    /// executable name (node.exe, by default). Specify a different target
-    /// runtime if the addon will be loaded within a non-Node.js runtime.
+    /// Controls the runtime lookup mode when targeting Windows.
     ///
-    /// This is a temporary workaround until a better solution is found, or
-    /// until Zig provides delay-load support to enable lazily linking to the
-    /// calling runtime when first loaded:
-    /// https://github.com/ziglang/zig/issues/7049
-    win32_runtime: targets.Runtime = .node,
-
-    /// Controls how Node-API symbols are resolved when targeting Windows.
-    win32_symbol_resolution: Win32SymbolResolution = .import_lib,
+    /// - `.dynamic` resolves Node-API symbols from the host process at
+    ///   runtime (default; closest to node-gyp delay-load behavior).
+    /// - Any concrete runtime (`.node`, `.electron`, `.bun`, `.deno`) uses
+    ///   import-lib resolution with a fixed host executable name.
+    win32_runtime: targets.Runtime = .dynamic,
 };
 
 /// Links a stub library containing Node-API symbols to enable compiling addon
@@ -194,9 +173,8 @@ pub fn linkNodeStub(
 ) void {
     switch (lib.rootModuleTarget().os.tag) {
         .linux => linkNodeStubLinux(b, lib, opts),
-        .windows => switch (opts.win32_symbol_resolution) {
-            .import_lib => linkNodeStubWin32(b, lib, opts),
-            .runtime_lookup => {
+        .windows => switch (opts.win32_runtime) {
+            .dynamic => {
                 const dep_tokota = opts.dep_tokota orelse b.dependency(
                     "tokota",
                     .{
@@ -206,6 +184,7 @@ pub fn linkNodeStub(
                 );
                 linkNodeRuntimeLookupWin32(b, lib, dep_tokota);
             },
+            else => linkNodeStubWin32(b, lib, opts),
         },
         else => lib.linker_allow_shlib_undefined = true,
     }

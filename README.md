@@ -1,6 +1,6 @@
 # Tokota
 
-` › build / package / publish multi-platform NodeJS addons written in Zig 🧡 `
+`› build / package / publish multi-platform NodeJS addons written in Zig 🧡`
 
 [Documentation ↗](https://kofi-q.github.io/tokota) | | [Overview](#overview) | | [Versions](#versions) | | [Getting Started](#getting-started) | | [Beyond Hello...](#beyond-hello)
 
@@ -138,11 +138,10 @@ pub fn build(b: *std.Build) !void {
         .root_source_file = b.path("src/root.zig"),
         .output_dir = .{ .custom = "../lib" },
 
-        // Resolve N-API symbols from the runtime process image at runtime.
-        // Useful for packaged Electron apps where the .exe name is unknown.
-        // .win32_symbol_resolution = .runtime_lookup,
-
-        // Required when targeting non-Node.js runtimes on Windows:
+        // Windows defaults to `.win32_runtime = .dynamic`, which resolves
+        // N-API symbols from the host process image at runtime (node-gyp-like).
+        //
+        // To preserve legacy import-lib linking behavior for a fixed runtime:
         // .win32_runtime = .bun,
     });
 
@@ -266,12 +265,6 @@ pub const Encabulator = t.ClassZ("Turbo", struct {
 
 ```js
 // module.js
-
-
-
-
-
-
 
 const internal = "Not exported";
 
@@ -484,8 +477,7 @@ The [`Val`](https://kofi-q.github.io/tokota/#tokota.Val) type is a generic, opaq
 
 > [!NOTE]
 >
-> `Val` handles are only valid for the duration of the scope within  which they are created - usually the scope of an addon callback function. Handles that need to be reference later on an another thread or in another callback must be referenced first (e.g. [`Object.ref()`](https://kofi-q.github.io/tokota/#tokota.Object.ref), [`ArrayBuffer.ref()`](https://kofi-q.github.io/tokota/#tokota.ArrayBuffer.ref)).
-
+> `Val` handles are only valid for the duration of the scope within which they are created - usually the scope of an addon callback function. Handles that need to be reference later on an another thread or in another callback must be referenced first (e.g. [`Object.ref()`](https://kofi-q.github.io/tokota/#tokota.Object.ref), [`ArrayBuffer.ref()`](https://kofi-q.github.io/tokota/#tokota.ArrayBuffer.ref)).
 
 ### Type Conversion
 
@@ -554,17 +546,18 @@ At a high level, these conversion utilities follow the logic below:
   - Any non-`fn` declarations are converted to value properties on the `Object`, but will have no link to the original Zig value (e.g. a `pub var foo: u32` decl will be exported, but changes to `foo` will not be reflected in the JS `Object`).
   - Zig struct fields are ignored. To convert to an `Object` with properties matching struct fields, return an instance of the struct instead.
 
-
 #### Custom Conversion
 
 For more flexibility when converting complex types like structs and types with no supported inferred conversion, like unions, custom conversion functions can be added to the type to enable receiving it as an argument and/or returning it from a native callback function. See [examples/custom_arg](./examples/custom_arg/main.zig) for an example.
 
 For argument conversion from JS to a custom type, include the following method in the type definition:
+
 ```zig
 pub fn fromJs(env: tokota.Env, val: tokota.Val) !T;
 ```
 
 For return value conversion from a custom type to JS, include the following method in the type definition:
+
 ```zig
 pub fn toJs(self: T, env: tokota.Env) tokota.Val;
 ```

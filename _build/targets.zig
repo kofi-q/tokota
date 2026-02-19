@@ -92,6 +92,7 @@ pub fn packageName(
 pub const Runtime = enum {
     bun,
     deno,
+    dynamic,
     electron,
     node,
 
