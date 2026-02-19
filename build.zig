@@ -4,7 +4,7 @@ const base = @import("base");
 
 pub const _build = @import("_build/root.zig");
 pub const Addon = _build.Addon;
-pub const napi_forward = _build.napi_forward;
+pub const napi_proxy = _build.napi_proxy;
 pub const node_dll = _build.node_dll;
 pub const node_stub_so = _build.node_stub_so;
 pub const npm = _build.npm;
@@ -69,7 +69,7 @@ pub fn build(b: *std.Build) void {
     var dep_tokota_internal = std.Build.Dependency{ .builder = b };
 
     b.addNamedLazyPath(node_dll.def_name, b.path(node_dll.def_path));
-    b.addNamedLazyPath(napi_forward.src_name, b.path(napi_forward.src_path));
+    b.addNamedLazyPath(napi_proxy.src_name, b.path(napi_proxy.src_path));
     b.addNamedLazyPath(node_stub_so.src_name, b.path(node_stub_so.src_path));
 
     steps.symbols.dependOn(&node_dll.updateSource(
@@ -84,7 +84,7 @@ pub fn build(b: *std.Build) void {
         mode,
         &dep_tokota_internal,
     ).step);
-    steps.symbols.dependOn(&napi_forward.updateSource(
+    steps.symbols.dependOn(&napi_proxy.updateSource(
         b,
         steps.check,
         mode,
@@ -100,7 +100,7 @@ pub fn build(b: *std.Build) void {
     symbols_diff.addArgs(&.{
         node_stub_so.src_path,
         node_dll.def_path,
-        napi_forward.src_path,
+        napi_proxy.src_path,
     });
     symbols_diff.step.dependOn(steps.symbols);
     steps.symbols_check.dependOn(&symbols_diff.step);

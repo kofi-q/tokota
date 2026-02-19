@@ -2,7 +2,7 @@
 
 const std = @import("std");
 
-const napi_forward = @import("windows/napi_forward_source.zig");
+const napi_proxy = @import("windows/napi_proxy_source.zig");
 const node_dll = @import("windows/node_dll.zig");
 const node_stub_so = @import("linux/node_stub_so.zig");
 const targets = @import("targets.zig");
@@ -231,14 +231,14 @@ fn linkNodeRuntimeLookupWin32(
     dep_tokota: *std.Build.Dependency,
 ) void {
     const obj = b.addObject(.{
-        .name = "tokota_napi_forward",
+        .name = "tokota_napi_proxy",
         .root_module = b.createModule(.{
             .imports = &.{.{
                 .name = "tokota",
                 .module = dep_tokota.module("tokota"),
             }},
             .optimize = lib.root_module.optimize.?,
-            .root_source_file = dep_tokota.namedLazyPath(napi_forward.src_name),
+            .root_source_file = dep_tokota.namedLazyPath(napi_proxy.src_name),
             .target = lib.root_module.resolved_target,
         }),
     });

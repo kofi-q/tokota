@@ -2,13 +2,13 @@ const std = @import("std");
 
 const Addon = @import("../Addon.zig");
 
-pub const src_path = "_build/windows/napi_forward.zig";
-pub const src_name = "napi_forward.zig";
+pub const src_path = "_build/windows/napi_proxy.zig";
+pub const src_name = "napi_proxy.zig";
 
-/// Adds a build step for emitting a `napi_forward.zig` source file containing
+/// Adds a build step for emitting a `napi_proxy.zig` source file containing
 /// runtime Node-API symbol forwarders for Windows builds.
 ///
-/// Creates a `namedLazyPath("napi_forward.zig")` build graph node representing
+/// Creates a `namedLazyPath("napi_proxy.zig")` build graph node representing
 /// the output path to the generated file.
 pub fn updateSource(
     b: *std.Build,
@@ -21,9 +21,9 @@ pub fn updateSource(
     const addon = Addon.create(b, .{
         .mode = mode,
         .target = native_target,
-        .name = "emit_napi_forward",
+        .name = "emit_napi_proxy",
         .output_dir = .{ .custom = "../_build/windows" },
-        .root_source_file = b.path("_build/windows/emit_napi_forward.zig"),
+        .root_source_file = b.path("_build/windows/emit_napi_proxy.zig"),
         .tokota = .{ .dep = dep_tokota },
     });
     check_step.dependOn(&b.addLibrary(.{
@@ -32,8 +32,8 @@ pub fn updateSource(
     }).step);
 
     const emit = b.addSystemCommand(&.{"node"});
-    emit.addFileArg(b.path("_build/windows/emit_napi_forward.js"));
-    emit.addFileInput(b.path("_build/windows/emit_napi_forward.node"));
+    emit.addFileArg(b.path("_build/windows/emit_napi_proxy.js"));
+    emit.addFileInput(b.path("_build/windows/emit_napi_proxy.node"));
     emit.step.dependOn(&addon.install.step);
 
     const generated = b.addUpdateSourceFiles();
