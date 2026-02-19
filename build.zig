@@ -9,10 +9,16 @@ pub const node_dll = _build.node_dll;
 pub const node_stub_so = _build.node_stub_so;
 pub const npm = _build.npm;
 pub const tokota = _build.tokota;
+const targets = @import("_build/targets.zig");
 
 pub fn build(b: *std.Build) void {
     const mode = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
+    const win32_runtime = b.option(
+        targets.Runtime,
+        "win32-runtime",
+        "Windows addon runtime mode: dynamic|node|electron|bun|deno",
+    ) orelse .dynamic;
 
     const steps = Steps{
         .check = b.step("check", "Generate compiler diagnostics"),
@@ -112,6 +118,7 @@ pub fn build(b: *std.Build) void {
     });
     Addon.linkNodeStub(b, lib_tokota_tests, .{
         .dep_tokota = &dep_tokota_internal,
+        .win32_runtime = win32_runtime,
     });
 
     const cmd_test_tokota = b.addRunArtifact(lib_tokota_tests);
@@ -133,6 +140,7 @@ pub fn build(b: *std.Build) void {
             ),
             .target = target,
             .tokota = .{ .dep = &dep_tokota_internal },
+            .win32_runtime = win32_runtime,
         });
 
         const node_run = b.addSystemCommand(&.{
@@ -178,6 +186,7 @@ pub fn build(b: *std.Build) void {
             .root_source_file = b.path(b.pathJoin(&.{ dirpath, "test.zig" })),
             .target = target,
             .tokota = .{ .dep = &dep_tokota_internal },
+            .win32_runtime = win32_runtime,
         });
         addon.lib.use_llvm = true;
 
