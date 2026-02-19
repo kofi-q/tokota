@@ -66,7 +66,6 @@ pub fn emit() !void {
 
     try emitHeader(&std_out.interface);
     try emitSymbolsStruct(&std_out.interface, defs.items);
-    try emitInitFn(&std_out.interface, defs.items);
     try emitWrappers(&std_out.interface, defs.items);
 
     try std_out.interface.flush();
@@ -119,7 +118,7 @@ fn emitHeader(w: *std.Io.Writer) !void {
         \\extern "kernel32" fn GetModuleHandleA(name: ?[*:0]const u8) callconv(.winapi) HMODULE;
         \\extern "kernel32" fn GetProcAddress(module: HMODULE, proc: [*:0]const u8) callconv(.winapi) ?*anyopaque;
         \\
-        \\var symbols_once = std.once(initSymbols);
+        \\var symbols_lock: std.Thread.Mutex = .{};
         \\
         \\fn hostModule() HMODULE {
         \\    if (GetModuleHandleA("libnode.dll")) |module| return module;
@@ -135,6 +134,23 @@ fn emitHeader(w: *std.Io.Writer) !void {
         \\    return @ptrCast(proc);
         \\}
         \\
+        \\fn resolve(
+        \\    comptime Fn: type,
+        \\    comptime symbol: [*:0]const u8,
+        \\    slot: *?*const Fn,
+        \\) *const Fn {
+        \\    if (slot.*) |ptr| return ptr;
+        \\
+        \\    symbols_lock.lock();
+        \\    defer symbols_lock.unlock();
+        \\
+        \\    if (slot.*) |ptr| return ptr;
+        \\
+        \\    const ptr = lookup(Fn, hostModule(), symbol);
+        \\    slot.* = ptr;
+        \\    return ptr;
+        \\}
+        \\
     );
 }
 
@@ -145,29 +161,12 @@ fn emitSymbolsStruct(w: *std.Io.Writer, defs: []const FnDef) !void {
     );
 
     for (defs) |def| try w.print(
-        \\    var {s}: *const @TypeOf(n.{s}) = undefined;
+        \\    var {s}: ?*const @TypeOf(n.{s}) = null;
         \\
     , .{ def.name, def.name });
 
     try w.writeAll(
         \\};
-        \\
-    );
-}
-
-fn emitInitFn(w: *std.Io.Writer, defs: []const FnDef) !void {
-    try w.writeAll(
-        \\fn initSymbols() void {
-        \\    const module = hostModule();
-        \\
-    );
-
-    for (defs) |def| try w.print(
-        \\    symbols.{s} = lookup(@TypeOf(n.{s}), module, "{s}");
-    , .{ def.name, def.name, def.name });
-
-    try w.writeAll(
-        \\}
         \\
     );
 }
@@ -178,16 +177,17 @@ fn emitWrappers(w: *std.Io.Writer, defs: []const FnDef) !void {
         try w.writeAll(def.params);
         try w.writeAll("\n) ");
         try w.writeAll(def.ret);
-        try w.writeAll(
-            \\ {
-            \\    symbols_once.call();
-            \\
+        try w.writeAll(" {\n");
+
+        try w.print(
+            "    const ptr = resolve(@TypeOf(n.{s}), \"{s}\", &symbols.{s});\n",
+            .{ def.name, def.name, def.name },
         );
 
         if (std.mem.eql(u8, def.ret, "void")) {
-            try w.print("    symbols.{s}(", .{def.name});
+            try w.writeAll("    ptr(");
         } else {
-            try w.print("    return symbols.{s}(", .{def.name});
+            try w.writeAll("    return ptr(");
         }
 
         for (def.args, 0..) |arg, i| {

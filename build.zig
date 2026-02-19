@@ -146,6 +146,12 @@ pub fn build(b: *std.Build) void {
             "Run add example with runtime Node-API symbol lookup on Windows",
         );
         example_run.dependOn(&node_run.step);
+
+        const example_build = b.step(
+            "examples:add:runtime_lookup:build",
+            "Build add example with runtime Node-API symbol lookup",
+        );
+        example_build.dependOn(&addon.install.step);
     }
 
     const node_test = b.addSystemCommand(&.{ "node", "--expose-gc", "--test" });
