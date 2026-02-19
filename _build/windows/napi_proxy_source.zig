@@ -17,24 +17,33 @@ pub fn updateSource(
     dep_tokota: ?*std.Build.Dependency,
 ) *std.Build.Step.UpdateSourceFiles {
     const native_target = b.resolveTargetQuery(.{});
-
-    const addon = Addon.create(b, .{
-        .mode = mode,
+    const _dep_tokota = dep_tokota orelse b.dependency("tokota", .{
+        .optimize = mode,
         .target = native_target,
-        .name = "emit_napi_proxy",
-        .output_dir = .{ .custom = "../_build/windows" },
-        .root_source_file = b.path("_build/windows/emit_napi_proxy.zig"),
-        .tokota = .{ .dep = dep_tokota },
     });
+
+    const module = b.createModule(.{
+        .imports = &.{.{
+            .name = "tokota",
+            .module = _dep_tokota.module("tokota"),
+        }},
+        .optimize = mode,
+        .root_source_file = b.path("_build/windows/emit_napi_proxy.zig"),
+        .target = native_target,
+    });
+
+    const emit_napi_proxy = b.addExecutable(.{
+        .name = "emit_napi_proxy",
+        .root_module = module,
+    });
+    Addon.linkNodeStub(b, emit_napi_proxy, .{ .dep_tokota = dep_tokota });
+
     check_step.dependOn(&b.addLibrary(.{
         .name = "check",
-        .root_module = addon.root_module,
+        .root_module = module,
     }).step);
 
-    const emit = b.addSystemCommand(&.{"node"});
-    emit.addFileArg(b.path("_build/windows/emit_napi_proxy.js"));
-    emit.addFileInput(b.path("_build/windows/emit_napi_proxy.node"));
-    emit.step.dependOn(&addon.install.step);
+    const emit = b.addRunArtifact(emit_napi_proxy);
 
     const generated = b.addUpdateSourceFiles();
     _ = generated.addCopyFileToSource(emit.captureStdOut(.{}), src_path);

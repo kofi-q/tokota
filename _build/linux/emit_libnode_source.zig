@@ -6,6 +6,10 @@ comptime {
     @import("tokota").exportModule(@This());
 }
 
+pub fn main() !void {
+    try emit();
+}
+
 pub fn emit() !void {
     const decls = @typeInfo(napi).@"struct".decls;
 

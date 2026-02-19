@@ -19,24 +19,33 @@ pub fn updateSource(
     dep_tokota: ?*std.Build.Dependency,
 ) *std.Build.Step.UpdateSourceFiles {
     const native_target = b.resolveTargetQuery(.{});
-
-    const addon = Addon.create(b, .{
-        .mode = mode,
+    const _dep_tokota = dep_tokota orelse b.dependency("tokota", .{
+        .optimize = mode,
         .target = native_target,
-        .name = "emit_node_def",
-        .output_dir = .{ .custom = "../_build/windows" },
-        .root_source_file = b.path("_build/windows/emit_node_def.zig"),
-        .tokota = .{ .dep = dep_tokota },
     });
+
+    const module = b.createModule(.{
+        .imports = &.{.{
+            .name = "tokota",
+            .module = _dep_tokota.module("tokota"),
+        }},
+        .optimize = mode,
+        .root_source_file = b.path("_build/windows/emit_node_def.zig"),
+        .target = native_target,
+    });
+
+    const emit_node_def = b.addExecutable(.{
+        .name = "emit_node_def",
+        .root_module = module,
+    });
+    Addon.linkNodeStub(b, emit_node_def, .{ .dep_tokota = dep_tokota });
+
     check_step.dependOn(&b.addLibrary(.{
         .name = "check",
-        .root_module = addon.root_module,
+        .root_module = module,
     }).step);
 
-    const emit = b.addSystemCommand(&.{"node"});
-    emit.addFileArg(b.path("_build/windows/emit_node_def.js"));
-    emit.addFileInput(b.path("_build/windows/emit_node_def.node"));
-    emit.step.dependOn(&addon.install.step);
+    const emit = b.addRunArtifact(emit_node_def);
 
     const node_def = b.addUpdateSourceFiles();
     _ = node_def.addCopyFileToSource(emit.captureStdOut(.{}), def_path);
