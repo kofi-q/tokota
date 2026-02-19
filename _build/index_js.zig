@@ -30,10 +30,9 @@ pub fn generate(
         \\
         \\let pkg;
         \\
-        \\const abi = detectAbi();
-        \\const target = (abi)
-        \\  ? `${process.platform}-${process.arch}-${abi}`
-        \\  : `${process.platform}-${process.arch}`;
+        \\const target = [process.platform, process.arch, detectAbi()]
+        \\  .filter(Boolean)
+        \\  .join('-');
         \\
         \\switch (target) {
         \\
