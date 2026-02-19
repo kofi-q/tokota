@@ -194,12 +194,18 @@ pub fn build(b: *std.Build) void {
         }
     }
 
+    const node_arch_check = addRuntimeArchCheck(b, .node, target);
+    const bun_arch_check = addRuntimeArchCheck(b, .bun, target);
+    const deno_arch_check = addRuntimeArchCheck(b, .deno, target);
+
     const node_test = b.addSystemCommand(&.{ "node", "--expose-gc", "--test" });
     node_test.setCwd(b.path("."));
+    node_test.step.dependOn(&node_arch_check.step);
     steps.test_node.dependOn(&node_test.step);
     if (b.args) |args| node_test.addArgs(args);
 
     const deno_test = denoTest(b, target.result);
+    deno_test.dependOn(&deno_arch_check.step);
     steps.test_deno.dependOn(deno_test);
 
     inline for (tests.configs) |config| {
@@ -234,6 +240,7 @@ pub fn build(b: *std.Build) void {
         deno_test.dependOn(&addon.install.step);
 
         const bun_test = bunTest(b, b.pathJoin(&.{ ".", dirpath, "test.mjs" }));
+        bun_test.dependOn(&bun_arch_check.step);
         bun_test.dependOn(&addon.install.step);
         steps.test_bun.dependOn(bun_test);
     }
@@ -383,6 +390,62 @@ fn docs(
 
 fn isCi(b: *std.Build) bool {
     return b.graph.environ_map.get("CI") != null;
+}
+
+// Runtimes may not be the same architecture as the build target.
+// Before running tests, spawn a runtime process to check that the architecture
+// matches and print a helpful error message if not.
+fn addRuntimeArchCheck(
+    b: *std.Build,
+    runtime: targets.Runtime,
+    target: std.Build.ResolvedTarget,
+) *std.Build.Step.Run {
+    const expected_zig_arch = @tagName(target.result.cpu.arch);
+    const target_os = @tagName(target.result.os.tag);
+    const runtime_name = @tagName(runtime);
+
+    const cmd = switch (runtime) {
+        .bun => b.addSystemCommand(&.{ "bun", "--eval" }),
+        .deno => b.addSystemCommand(&.{ "deno", "eval" }),
+        .node => b.addSystemCommand(&.{ "node", "--eval" }),
+        else => @panic("Unsupported runtime for arch check"),
+    };
+
+    cmd.addArg(switch (runtime) {
+        .deno =>
+        \\const expected = Deno.args[0];
+        \\const os = Deno.args[1];
+        \\const runtime = Deno.args[2];
+        \\const actual = Deno.build.arch;
+        \\const asZig = actual;
+        \\if (asZig !== expected) {
+        \\  console.error("[tokota] " + runtime + " runtime architecture mismatch (runtime=" + actual + ", build target=" + expected + ").");
+        \\  console.error("[tokota] Use -Dtarget=" + asZig + "-" + os);
+        \\  Deno.exit(1);
+        \\}
+        ,
+        else =>
+        \\const expected = process.argv[1];
+        \\const os = process.argv[2];
+        \\const runtime = process.argv[3];
+        \\const actual = process.arch;
+        \\const asZig = actual === "x64" ? "x86_64" :
+        \\  actual === "arm64" ? "aarch64" :
+        \\  actual === "ia32" ? "x86" :
+        \\  actual;
+        \\if (asZig !== expected) {
+        \\  console.error("[tokota] " + runtime + " runtime architecture mismatch (runtime=" + actual + ", build target=" + expected + ").");
+        \\  console.error("[tokota] Use -Dtarget=" + asZig + "-" + os);
+        \\  process.exit(1);
+        \\}
+        ,
+    });
+    cmd.addArg(expected_zig_arch);
+    cmd.addArg(target_os);
+    cmd.addArg(runtime_name);
+    cmd.setCwd(b.path("."));
+
+    return cmd;
 }
 
 const examples = struct {
