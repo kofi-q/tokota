@@ -363,10 +363,10 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
 
     const main_pkg = blk: {
         const package_json_contents = patched: {
-            var opt_deps = std.json.ObjectMap.init(allo_arena);
+            var opt_deps = std.json.ObjectMap.empty;
 
             for (bin_dependencies.items) |dep| opt_deps
-                .put(dep[0], .{ .string = dep[1] }) catch
+                .put(allo_arena, dep[0], .{ .string = dep[1] }) catch
                 @panic("OOM");
 
             var files = std.json.Array.initCapacity(
@@ -379,10 +379,14 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
             }
 
             var raw_object = main_pkg_json.object;
-            raw_object.put("files", .{ .array = files }) catch @panic("OOM");
-            raw_object
-                .put("optionalDependencies", .{ .object = opt_deps }) catch
-                @panic("OOM");
+
+            raw_object.put(allo_arena, "files", .{
+                .array = files,
+            }) catch @panic("OOM");
+
+            raw_object.put(allo_arena, "optionalDependencies", .{
+                .object = opt_deps,
+            }) catch @panic("OOM");
 
             break :patched json.Stringify.valueAlloc(allo_arena, std.json.Value{
                 .object = raw_object,
