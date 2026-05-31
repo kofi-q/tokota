@@ -42,7 +42,7 @@ pub fn main(init: std.process.Init) !void {
 
     try stdout.fillMore();
     while (stdout.bufferedLen() > 0) : (try stdout.fillMore()) {
-        _ = std.mem.find(u8, stdout.buffered(), "Email:") orelse continue;
+        _ = std.mem.find(u8, stdout.buffered(), "Email") orelse continue;
 
         try stdin.writeAll("tokota@example.com\n");
         stdout.tossBuffered();

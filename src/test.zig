@@ -334,7 +334,7 @@ const PuppyApiWithData = t.Api([*:0]const u8, struct {
 });
 
 pub fn returnTokotaApi(data: t.TinyStr(16)) !PuppyApiWithData {
-    const native_data = try dba.allocator().dupeZ(u8, data.slice());
+    const native_data = try dba.allocator().dupeSentinel(u8, data.slice(), 0);
 
     return .init(
         native_data.ptr,

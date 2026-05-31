@@ -60,7 +60,7 @@ pub const ArrayBuffers = struct {
 
         if (&buf_zig.buf != buf_js.data.ptr) return call.env.throwErr(.{
             .code = "AssertionFailed",
-            .msg = try std.fmt.bufPrintZ(&err_buf,
+            .msg = try std.fmt.bufPrintSentinel(&err_buf,
                 \\
                 \\Mismatched Buffer data pointer.
                 \\Expected: {*}
@@ -68,7 +68,7 @@ pub const ArrayBuffers = struct {
             , .{
                 &buf_zig.buf,
                 buf_js.data.ptr,
-            }),
+            }, 0),
         });
 
         if (!std.mem.eql(
@@ -77,7 +77,7 @@ pub const ArrayBuffers = struct {
             expected.data,
         )) return call.env.throwErr(.{
             .code = "AssertionFailed",
-            .msg = try std.fmt.bufPrintZ(&err_buf,
+            .msg = try std.fmt.bufPrintSentinel(&err_buf,
                 \\
                 \\Mismatched Buffer data.
                 \\Expected: {x:0>2}
@@ -85,7 +85,7 @@ pub const ArrayBuffers = struct {
             , .{
                 expected.data,
                 buf_zig.buf[0..expected.data.len],
-            }),
+            }, 0),
         });
     }
 
@@ -127,11 +127,11 @@ pub const Buffers = struct {
 
             return call.env.throwErr(.{
                 .code = "AssertionFailed",
-                .msg = try std.fmt.bufPrintZ(&buf,
+                .msg = try std.fmt.bufPrintSentinel(&buf,
                     \\
                     \\Expected: {{ ca, fe, f0, 0d }}
                     \\Actual: {x:0>2}
-                , .{buffer.data}),
+                , .{buffer.data}, 0),
             });
         }
 
@@ -183,7 +183,7 @@ pub const Buffers = struct {
 
         if (&buf_zig.buf != buf_js.data.ptr) return call.env.throwErr(.{
             .code = "AssertionFailed",
-            .msg = try std.fmt.bufPrintZ(&err_buf,
+            .msg = try std.fmt.bufPrintSentinel(&err_buf,
                 \\
                 \\Mismatched Buffer data pointer.
                 \\Expected: {*}
@@ -191,7 +191,7 @@ pub const Buffers = struct {
             , .{
                 &buf_zig.buf,
                 buf_js.data.ptr,
-            }),
+            }, 0),
         });
 
         if (!std.mem.eql(
@@ -200,7 +200,7 @@ pub const Buffers = struct {
             expected.data,
         )) return call.env.throwErr(.{
             .code = "AssertionFailed",
-            .msg = try std.fmt.bufPrintZ(&err_buf,
+            .msg = try std.fmt.bufPrintSentinel(&err_buf,
                 \\
                 \\Mismatched Buffer data.
                 \\Expected: {x:0>2}
@@ -208,7 +208,7 @@ pub const Buffers = struct {
             , .{
                 expected.data,
                 buf_zig.buf[0..expected.data.len],
-            }),
+            }, 0),
         });
     }
 
@@ -258,11 +258,11 @@ pub const DataViews = struct {
         var buf: [64]u8 = undefined;
         if (value != 0x0405) return call.env.throwErr(.{
             .code = "AssertionFailed",
-            .msg = try std.fmt.bufPrintZ(&buf,
+            .msg = try std.fmt.bufPrintSentinel(&buf,
                 \\
                 \\Expected: 0x0405
                 \\Actual: 0x{x:0>4}
-            , .{value}),
+            , .{value}, 0),
         });
 
         return dataview.buffer;
@@ -437,11 +437,11 @@ pub const TypedArrays = struct {
         var err_buf: [64]u8 = undefined;
         if (sample_value != 0x0405) return call.env.throwErr(.{
             .code = "AssertionFailed",
-            .msg = try std.fmt.bufPrintZ(&err_buf,
+            .msg = try std.fmt.bufPrintSentinel(&err_buf,
                 \\
                 \\Expected: 0x0405
                 \\Actual: 0x{x:0>4}
-            , .{sample_value}),
+            , .{sample_value}, 0),
         });
 
         return arr.buffer;

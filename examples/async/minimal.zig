@@ -39,7 +39,7 @@ const Runner = struct {
 
         var io_threaded = std.Io.Threaded.init(allo, .{ .environ = .empty });
         defer io_threaded.deinit();
-        const io = io_threaded.ioBasic();
+        const io = io_threaded.io();
 
         const raw_json = try std.Io.Dir.cwd()
             .readFileAlloc(io, path_todos, allo, .limited(26 * 1024));

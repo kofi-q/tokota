@@ -277,10 +277,11 @@ fn CallImpl(comptime Self: type) type {
                 field.* = arg.to(self.env, T) catch |e| {
                     return self.env.throwErrType(.{
                         .code = @errorName(e),
-                        .msg = try std.fmt.bufPrintZ(
+                        .msg = try std.fmt.bufPrintSentinel(
                             &buf_err,
                             "[{t}] Argument error at index {d}",
                             .{ e, idx },
+                            0,
                         ),
                     });
                 };

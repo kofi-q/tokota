@@ -11,6 +11,7 @@ const config = tsEsLint.config(
     "**/_build",
     "**/node_modules",
     "**/zig-out",
+    "**/zig-pkg",
     "bench",
     "examples",
     "eslint.config.mjs",

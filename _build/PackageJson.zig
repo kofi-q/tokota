@@ -59,7 +59,7 @@ pub const Dependencies = struct {
     ) !Dependencies {
         if (val != .object) return error.UnexpectedToken;
 
-        var deps = ArrayList(Dependency){};
+        var deps = ArrayList(Dependency).empty;
         var entries = val.object.iterator();
         while (entries.next()) |entry| try deps.append(allo, .{
             entry.key_ptr.*,

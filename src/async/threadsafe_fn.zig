@@ -201,10 +201,11 @@ pub fn wrapCallback(
 
                 else => env.throwOrPanic(.{
                     .code = @errorName(err),
-                    .msg = std.fmt.bufPrintZ(
+                    .msg = std.fmt.bufPrintSentinel(
                         &buf_err,
                         "[ {t} ] Error in Threadsafe Function handler - {s}",
                         .{ err, @typeName(T) },
+                        0,
                     ) catch unreachable,
                 }),
             };
@@ -264,10 +265,11 @@ pub fn wrapProxy(
 
                 else => env.throwOrPanic(.{
                     .code = @errorName(err),
-                    .msg = std.fmt.bufPrintZ(
+                    .msg = std.fmt.bufPrintSentinel(
                         &buf_err,
                         "[ {t} ] Error in Threadsafe Function handler - {s}",
                         .{ err, @typeName(T) },
+                        0,
                     ) catch unreachable,
                 }),
             };

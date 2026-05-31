@@ -78,7 +78,7 @@ pub inline fn castStatic(
         return Error.ExpectedUnsignedBigInt;
     }
 
-    const Uint = std.meta.Int(.unsigned, wordCount(ZigInt) * word_bit_count);
+    const Uint = @Int(.unsigned, wordCount(ZigInt) * word_bit_count);
     const uint = std.mem.readInt(Uint, @ptrCast(words), .little);
 
     if (comptime int_info.signedness == .unsigned) {
@@ -117,9 +117,9 @@ pub inline fn fromSigned(val: anytype) BigInt {
     };
 
     const word_count = comptime wordCount(ZigInt);
-    const Uint = std.meta.Int(.unsigned, word_count * word_bit_count);
+    const Uint = @Int(.unsigned, word_count * word_bit_count);
 
-    const PaddedInt = std.meta.Int(.signed, int_info.bits + 1);
+    const PaddedInt = @Int(.signed, int_info.bits + 1);
     const is_negative = val < 0;
     const sign_multiplier = 1 - @as(i8, 2) * @intFromBool(is_negative);
 
@@ -147,7 +147,7 @@ pub inline fn fromUnsigned(val: anytype) BigInt {
     };
 
     const word_count = wordCount(@TypeOf(val));
-    const Uint = std.meta.Int(.unsigned, word_count * word_bit_count);
+    const Uint = @Int(.unsigned, word_count * word_bit_count);
 
     var word_buf: [word_count]Word = undefined;
     std.mem.writeInt(Uint, @ptrCast(&word_buf), val, .little);

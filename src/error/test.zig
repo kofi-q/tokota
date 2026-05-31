@@ -17,20 +17,22 @@ pub fn callFailingFunction(call: t.Call, function: t.Fn) !t.Val {
 
         if (err != t.Err.PendingException) return call.env.throwErr(.{
             .code = "UnexpectedError",
-            .msg = try std.fmt.bufPrintZ(
+            .msg = try std.fmt.bufPrintSentinel(
                 &buf_err,
                 "Expected error {t}, got {t}\n",
                 .{ t.Err.PendingException, err },
+                0,
             ),
         });
 
         const last_err = try call.env.lastNapiErr();
         if (last_err.code != .pending_exception) return call.env.throwErr(.{
             .code = "UnexpectedNapiLastError",
-            .msg = try std.fmt.bufPrintZ(
+            .msg = try std.fmt.bufPrintSentinel(
                 &buf_err,
                 "Expected last error status {t}, got {t}\n",
                 .{ n.Status.pending_exception, last_err.code },
+                0,
             ),
         });
 

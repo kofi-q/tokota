@@ -71,10 +71,11 @@ pub fn napiCb(comptime impl: anytype, comptime opts: CbOptions) n.Callback {
 
                     else => env.throwOrPanic(.{
                         .code = @errorName(err),
-                        .msg = std.fmt.bufPrintZ(
+                        .msg = std.fmt.bufPrintSentinel(
                             &buf_err,
                             "[ {t} ] JS argument conversion failed",
                             .{err},
+                            0,
                         ) catch buf_err ++ "...(truncated)",
                     }),
                 }
@@ -94,10 +95,11 @@ pub fn napiCb(comptime impl: anytype, comptime opts: CbOptions) n.Callback {
 
                     else => env.throwOrPanic(.{
                         .code = @errorName(err),
-                        .msg = std.fmt.bufPrintZ(
+                        .msg = std.fmt.bufPrintSentinel(
                             &buf_err,
                             "[ {t} ] - Error in native function",
                             .{err},
+                            0,
                         ) catch buf_err ++ "...(truncated)",
                     }),
                 }
@@ -111,10 +113,11 @@ pub fn napiCb(comptime impl: anytype, comptime opts: CbOptions) n.Callback {
 
                     else => env.throwOrPanic(.{
                         .code = "ReturnValueConversionFailed",
-                        .msg = std.fmt.bufPrintZ(
+                        .msg = std.fmt.bufPrintSentinel(
                             &buf_err,
                             "[ {t} ] JS return value conversion failed",
                             .{err},
+                            0,
                         ) catch buf_err ++ "...(truncated)",
                     }),
                 }
