@@ -116,7 +116,7 @@ cd path/to/project && zig init
 Add Tokota, as a dependency, to your `build.zig.zon` file:
 
 ```sh
-zig fetch --save "git+https://github.com/kofi-q/tokota.git"
+zig fetch --save "git+https://github.com/kofi-q/tokota.git#zig-0.16"
 ```
 
 Then, import the dependency in `build.zig` and create an addon build step:
