@@ -31,7 +31,7 @@ pub const Latin1 = struct {
         fn init(value: [:0]const u8) !*OwnedString {
             const allo = dba.allocator();
             const str = try allo.create(OwnedString);
-            str.* = .{ .value = try allo.dupeZ(u8, value) };
+            str.* = .{ .value = try allo.dupeSentinel(u8, value, 0) };
 
             return str;
         }
@@ -154,7 +154,7 @@ pub const Utf16 = struct {
         fn init(value: []const u16) !*OwnedString {
             const allo = dba.allocator();
             const str = try allo.create(OwnedString);
-            str.* = .{ .value = try allo.dupeZ(u16, value) };
+            str.* = .{ .value = try allo.dupeSentinel(u16, value, 0) };
 
             return str;
         }
