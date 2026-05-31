@@ -28,7 +28,7 @@ pub fn emit() !void {
     var io_threaded = std.Io.Threaded.init(allo, .{ .environ = .empty });
     defer io_threaded.deinit();
 
-    const io = io_threaded.ioBasic();
+    const io = io_threaded.io();
 
     var buf: [1024]u8 = undefined;
     var std_out = std.Io.File.stdout().writer(io, &buf);
