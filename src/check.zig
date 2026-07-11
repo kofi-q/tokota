@@ -18,20 +18,20 @@ comptime {
 /// Copied from `std.testing`, to bypass the test-only restriction.
 pub fn refAllDeclsRecursive(comptime T: type) void {
     inline for (comptime std.meta.declarations(T)) |decl| {
-        if (@TypeOf(@field(T, decl.name)) == type) {
-            switch (@typeInfo(@field(T, decl.name))) {
+        if (@TypeOf(@field(T, decl)) == type) {
+            switch (@typeInfo(@field(T, decl))) {
                 .@"struct",
                 .@"enum",
                 .@"union",
                 .@"opaque",
-                => refAllDeclsRecursive(@field(T, decl.name)),
+                => refAllDeclsRecursive(@field(T, decl)),
                 else => {},
             }
         }
 
         // A little hacky, but this fn has a @compileError to guide usage.
-        if (T == tokota.Call and std.mem.eql(u8, decl.name, "fromJs")) continue;
+        if (T == tokota.Call and std.mem.eql(u8, decl, "fromJs")) continue;
 
-        _ = &@field(T, decl.name);
+        _ = &@field(T, decl);
     }
 }

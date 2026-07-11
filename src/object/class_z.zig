@@ -112,19 +112,19 @@ pub fn ClassZ(comptime name: []const u8, comptime T: type) type {
         }
 
         pub fn toJs(env: Env) !Val {
-            var props: [struct_info.decls.len]Property = undefined;
+            var props: [struct_info.decl_names.len]Property = undefined;
 
             comptime var len = 0;
-            inline for (struct_info.decls) |decl| {
-                if (comptime std.mem.eql(u8, decl.name, "constructor")) {
+            inline for (struct_info.decl_names) |decl| {
+                if (comptime std.mem.eql(u8, decl, "constructor")) {
                     continue;
                 }
 
-                const val = @field(T, decl.name);
+                const val = @field(T, decl);
                 props[len] = if (isFn(@TypeOf(val)))
-                    .method(decl.name, val, .{})
+                    .method(decl, val, .{})
                 else
-                    .value(decl.name, try env.infer(val), .{ .static = true });
+                    .value(decl, try env.infer(val), .{ .static = true });
 
                 len += 1;
             }

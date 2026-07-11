@@ -104,16 +104,21 @@ pub const Tag = packed struct(u128) {
             ),
         };
 
-        return comptime blk: for (@typeInfo(PtrChild).@"struct".fields) |f| {
-            if (!std.mem.eql(u8, f.name, "js_tag")) continue;
+        const info = @typeInfo(PtrChild).@"struct";
+        const names = info.field_names;
+        const attrs = info.field_attrs;
+        const types = info.field_types;
 
-            if (!f.is_comptime or f.type != Tag) @compileError(comptimePrint(
+        return comptime blk: for (names, attrs, types) |name, attr, typ| {
+            if (!std.mem.eql(u8, name, "js_tag")) continue;
+
+            if (!attr.@"comptime" or typ != Tag) @compileError(comptimePrint(
                 \\Invalid type: {s}
                 \\`Object.[wrap|unwrap]()` and `[Env|Val].external() methods
                 \\require a struct type with a `comptime js_tag: Object.Tag` field.
             , .{@typeName(T)}));
 
-            break :blk @ptrCast(@alignCast(f.default_value_ptr.?));
+            break :blk @ptrCast(@alignCast(attr.default_value_ptr.?));
         } else @compileError(comptimePrint(
             \\Invalid type: {s}
             \\`Object.[wrap|unwrap]()` and `[Env|Val].external() methods
@@ -255,22 +260,22 @@ pub fn defineApi(
         )),
     };
 
-    const prop_count_max = info.decls.len;
+    const prop_count_max = info.decl_names.len;
     var props: [prop_count_max]Property = undefined;
 
     comptime var count = 0;
-    inline for (comptime info.decls) |decl| {
-        comptime if (decl.name[0] == '_') continue;
-        comptime if (ignored_decls.has(decl.name)) continue;
+    inline for (info.decl_names) |name| {
+        comptime if (name[0] == '_') continue;
+        comptime if (ignored_decls.has(name)) continue;
 
-        const field = @field(Struct, decl.name);
+        const field = @field(Struct, name);
 
         props[count] = switch (@typeInfo(@TypeOf(field))) {
             .@"fn" => switch (@typeInfo(@TypeOf(method_data))) {
-                .void => .method(decl.name, &field, .{}),
-                else => .methodT(decl.name, &field, method_data, .{}),
+                .void => .method(name, &field, .{}),
+                else => .methodT(name, &field, method_data, .{}),
             },
-            else => .value(decl.name, try self.env.infer(field), .{}),
+            else => .value(name, try self.env.infer(field), .{}),
         };
 
         count += 1;
@@ -333,25 +338,25 @@ pub fn from(self: Object, obj_struct: anytype) !void {
         else => @compileError("Expected struct or struct pointer."),
     };
 
-    const max_props = info.fields.len;
+    const max_props = info.field_names.len;
     var props: [max_props]Property = undefined;
 
     comptime var prop_count: usize = 0;
-    inline for (info.fields) |field_info| {
+    inline for (info.field_names, info.field_types) |name, typ| {
         // Assume '_'-prefixed fields shouldn't be exported, but need to be
         // public for internal use.
-        comptime if (field_info.name[0] == '_') continue;
-        comptime if (std.mem.eql(u8, field_info.name, "js_tag")) continue;
+        comptime if (name[0] == '_') continue;
+        comptime if (std.mem.eql(u8, name, "js_tag")) continue;
 
-        props[prop_count] = switch (@typeInfo(field_info.type)) {
+        props[prop_count] = switch (@typeInfo(typ)) {
             .@"fn" => .method(
-                field_info.name,
-                @field(obj_struct, field_info.name),
+                name,
+                @field(obj_struct, name),
                 .{},
             ),
             else => .value(
-                field_info.name,
-                try self.env.infer(@field(obj_struct, field_info.name)),
+                name,
+                try self.env.infer(@field(obj_struct, name)),
                 .{},
             ),
         };
@@ -564,35 +569,36 @@ pub fn tagSet(self: Object, tag: *const Tag) !void {
 /// is `null` or `undefined` in JS object. An error is returned for all other
 /// missing fields.
 pub inline fn to(self: Object, comptime Struct: type) !Struct {
-    const fields = @typeInfo(Struct).@"struct".fields;
+    const names = @typeInfo(Struct).@"struct".field_names;
+    const types = @typeInfo(Struct).@"struct".field_types;
 
     var result: Struct = undefined;
-    inline for (fields) |field| {
-        if (comptime std.mem.eql(u8, field.name, "this")) {
-            @field(result, field.name) = self.ptr;
+    inline for (names, types) |name, typ| {
+        if (comptime std.mem.eql(u8, name, "this")) {
+            @field(result, name) = self.ptr;
             continue;
         }
 
-        const is_optional = comptime switch (@typeInfo(field.type)) {
+        const is_optional = comptime switch (@typeInfo(typ)) {
             .optional => true,
             else => false,
         };
 
-        const val = try self.get(field.name);
+        const val = try self.get(name);
 
         if ((comptime is_optional) and try val.isNullOrUndefined(self.env)) {
-            @field(result, field.name) = null;
+            @field(result, name) = null;
         } else {
             // [TODO] Provide a way to bubble up additional error data to the
             // callback handler, instead of logging here.
-            @field(result, field.name) = val.to(
+            @field(result, name) = val.to(
                 self.env,
-                field.type,
+                typ,
             ) catch |err| switch (err) {
                 error.PendingException => return err,
                 else => {
                     log.err("[{t}] Error at field `{s}` of type `{s}`", .{
-                        err, field.name, @typeName(Struct),
+                        err, name, @typeName(Struct),
                     });
 
                     return err;

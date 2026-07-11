@@ -62,11 +62,11 @@ pub inline fn argTupleValues(
 ) ![]const Val {
     if (!struct_info.is_tuple) @compileError("Tuple struct expected");
 
-    const len = struct_info.fields.len;
-    var values: [len]Val = undefined;
+    const names = struct_info.field_names;
+    var values: [names.len]Val = undefined;
 
-    inline for (struct_info.fields, 0..) |field, i| {
-        values[i] = try self.infer(@field(args, field.name));
+    inline for (names, 0..) |name, i| {
+        values[i] = try self.infer(@field(args, name));
     }
 
     return values[0..];

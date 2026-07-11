@@ -32,13 +32,13 @@ pub fn arrayFrom(self: Env, items: anytype) !Array {
     const tuple_len: ?comptime_int = switch (@typeInfo((Items))) {
         .@"struct" => |s| blk: {
             if (!s.is_tuple) @compileError("Expected indexable type.");
-            break :blk s.fields.len;
+            break :blk s.field_names.len;
         },
         .pointer => |ptr| switch (ptr.size) {
             .one => switch (@typeInfo(ptr.child)) {
                 .@"struct" => |s| blk: {
                     if (!s.is_tuple) @compileError("Expected indexable type.");
-                    break :blk s.fields.len;
+                    break :blk s.field_names.len;
                 },
                 else => null,
             },
