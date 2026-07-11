@@ -303,9 +303,9 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
             pkg_name,
         }));
 
-        const pkg_clean = base.addDirRemove(b, pkg_dir);
-        pkg_files.step.dependOn(&pkg_clean.step);
-        addon.install.step.dependOn(&pkg_clean.step);
+        const pkg_clean = base.addDirRemove(b, .{ .path = pkg_dir });
+        pkg_files.step.dependOn(pkg_clean);
+        addon.install.step.dependOn(pkg_clean);
 
         const pkg_install = b.addInstallDirectory(.{
             .install_dir = .{ .custom = opts.output_dir },
@@ -425,13 +425,12 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
         _ = if (pkg_json_opts.types) |typings|
             pkg_files.addCopyFile(typings, typings.src_path.sub_path);
 
-        const pkg_json_paths = base.addPathsCopy(b, pkg_files);
-        if (opts.pre_package) |pre| pkg_json_paths.step.dependOn(pre);
+        const pkg_json_paths = base.addPathsCopy(b, .{ .wf = pkg_files });
 
-        for (pkg_json_opts.files) |user_file| pkg_json_paths.addPath(
-            b.path(user_file),
-            user_file,
-        );
+        for (pkg_json_opts.files) |user_file| {
+            const copy = pkg_json_paths.add(b.path(user_file), user_file);
+            if (opts.pre_package) |pre| copy.dependOn(pre);
+        }
 
         const pkg_dir = b.path(b.pathJoin(&.{
             // [TODO] Would be less brittle to get this path from the
@@ -442,8 +441,8 @@ pub fn createPackages(b: *std.Build, opts: Options) Packages {
             main_pkg_name,
         }));
 
-        const pkg_clean = base.addDirRemove(b, pkg_dir);
-        pkg_files.step.dependOn(&pkg_clean.step);
+        const pkg_clean = base.addDirRemove(b, .{ .path = pkg_dir });
+        pkg_files.step.dependOn(pkg_clean);
 
         const package_install = b.addInstallDirectory(.{
             .install_dir = .{ .custom = opts.output_dir },
@@ -704,11 +703,17 @@ fn parsePackageJson(
     const allo = arena.allocator();
     const io = b.graph.io;
 
-    const file_path = path
-        .getPath3(b, null)
-        .toString(allo) catch @panic("OOM");
+    const file_path = switch (path) {
+        .cwd_relative => |p| p,
+        .src_path => |p| p.sub_path,
+        else => @panic(
+            "package.json lazy paths temporarily unsupported " ++
+                "during migration to 0.17.x",
+        ),
+    };
 
-    const file = std.Io.Dir.openFileAbsolute(io, file_path, .{
+    const cwd: std.Io.Dir = .cwd();
+    const file = cwd.openFile(io, file_path, .{
         .mode = .read_only,
     }) catch |err| @panic(b.fmt(
         "{t} - Unable to read package.json file from {s}\n",

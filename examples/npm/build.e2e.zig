@@ -39,8 +39,10 @@ pub fn create(b: *std.Build, publish: *std.Build.Step) E2e {
         ),
     };
 
-    const registry_clean = base.addDirRemove(b, b.path("registry/packages"));
-    e2e.registry_clean.dependOn(&registry_clean.step);
+    const registry_clean = base.addDirRemove(b, .{
+        .path = b.path("registry/packages"),
+    });
+    e2e.registry_clean.dependOn(registry_clean);
 
     const registry_start = b.addSystemCommand(&.{ "pnpm", "start" });
     registry_start.setCwd(b.path("registry"));
@@ -57,14 +59,15 @@ pub fn create(b: *std.Build, publish: *std.Build.Step) E2e {
     e2e.registry_login.dependOn(&registry_login.step);
 
     {
-        const client_clean_build = base.addDirRemove(b, b.path("client/build"));
-        e2e.client_clean.dependOn(&client_clean_build.step);
+        const client_clean_build = base.addDirRemove(b, .{
+            .path = b.path("client/build"),
+        });
+        e2e.client_clean.dependOn(client_clean_build);
 
-        const client_clean_deps = base.addDirRemove(
-            b,
-            b.path("client/node_modules"),
-        );
-        e2e.client_clean.dependOn(&client_clean_deps.step);
+        const client_clean_deps = base.addDirRemove(b, .{
+            .path = b.path("client/node_modules"),
+        });
+        e2e.client_clean.dependOn(client_clean_deps);
 
         const client_clean_pnpm = b.addSystemCommand(&.{
             "pnpm", "store", "prune",
@@ -72,11 +75,10 @@ pub fn create(b: *std.Build, publish: *std.Build.Step) E2e {
         client_clean_pnpm.setCwd(b.path("client"));
         e2e.client_clean.dependOn(&client_clean_pnpm.step);
 
-        const client_clean_lockfile = base.addFileRemove(
-            b,
-            b.path("client/pnpm-lock.yaml"),
-        );
-        e2e.client_clean.dependOn(&client_clean_lockfile.step);
+        const client_clean_lockfile = base.addFileRemove(b, .{
+            .path = b.path("client/pnpm-lock.yaml"),
+        });
+        e2e.client_clean.dependOn(client_clean_lockfile);
     }
 
     const client_install = b.addSystemCommand(&.{ "pnpm", "i" });
