@@ -2,7 +2,7 @@
     .name = .tokota,
     .version = "0.1.0",
     .fingerprint = 0xe4591fcbcafe4f04,
-    .minimum_zig_version = "0.15.1",
+    .minimum_zig_version = "0.17.0-dev.1282+c0f9b51d8",
     .dependencies = .{
         .base = .{
             .hash = "base-0.1.0-rhH4pnQtBQAnE-Gqr4QxkvJZ-HVzjbE8H7vXVg8kRBLI",
