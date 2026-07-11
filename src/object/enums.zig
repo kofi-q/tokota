@@ -116,27 +116,27 @@ pub fn FromBitFlags(
     comptime PackedStruct: type,
     comptime opts: FromBitFlagsOpts(PackedStruct),
 ) type {
-    const struct_info = @typeInfo(PackedStruct).@"struct";
+    const info = @typeInfo(PackedStruct).@"struct";
     const field_count_max =
-        struct_info.fields.len + opts.extra_fields.len + 1;
+        info.field_names.len + opts.extra_fields.len + 1;
 
-    const BackingInt = struct_info.backing_integer.?;
+    const BackingInt = info.backing_integer.?;
     comptime var names: [field_count_max][]const u8 = undefined;
     comptime var values: [field_count_max]BackingInt = undefined;
     comptime var count: usize = 0;
     comptime var bit_index: usize = 0;
 
-    comptime for (struct_info.fields) |struct_field| {
-        switch (struct_field.type) {
+    comptime for (info.field_names, info.field_types) |name, typ| {
+        switch (typ) {
             bool => {
                 defer bit_index += 1;
 
-                if (@field(opts.exclude, struct_field.name)) continue;
+                if (@field(opts.exclude, name)) continue;
 
                 names[count] = @field(
                     opts.rename,
-                    struct_field.name,
-                ) orelse struct_field.name;
+                    name,
+                ) orelse name;
 
                 values[count] = 1 << bit_index;
 
@@ -207,8 +207,8 @@ pub fn FromBitFlags(
 pub fn ToStringEnum(comptime E: type) type {
     const max_len: comptime_int = blk: {
         var max_len: usize = 0;
-        inline for (@typeInfo(E).@"enum".fields) |field| {
-            max_len = @max(max_len, field.name.len);
+        inline for (@typeInfo(E).@"enum".field_names) |field| {
+            max_len = @max(max_len, field.len);
         }
 
         break :blk max_len;
@@ -286,8 +286,8 @@ pub fn ToStringEnum(comptime E: type) type {
 pub fn StringEnumImpl(comptime E: type) type {
     const max_len: comptime_int = blk: {
         var max_len: usize = 0;
-        inline for (@typeInfo(E).@"enum".fields) |field| {
-            max_len = @max(max_len, field.name.len);
+        inline for (@typeInfo(E).@"enum".field_names) |field| {
+            max_len = @max(max_len, field.len);
         }
 
         break :blk max_len;
@@ -323,25 +323,26 @@ test FromBitFlags {
 
     const StatusUnmodified = FromBitFlags(Status, .{});
 
-    const fields_unmodified = @typeInfo(StatusUnmodified).@"enum".fields;
-    try std.testing.expectEqual(4, fields_unmodified.len);
+    const names_unmodified = @typeInfo(StatusUnmodified).@"enum".field_names;
+    const values_unmodified = @typeInfo(StatusUnmodified).@"enum".field_values;
+    try std.testing.expectEqual(4, names_unmodified.len);
 
-    try std.testing.expectEqual(1, fields_unmodified[0].value);
-    try std.testing.expectEqualStrings("off", fields_unmodified[0].name);
+    try std.testing.expectEqual(1, values_unmodified[0]);
+    try std.testing.expectEqualStrings("off", names_unmodified[0]);
 
-    try std.testing.expectEqual(1 << 1, fields_unmodified[1].value);
+    try std.testing.expectEqual(1 << 1, values_unmodified[1]);
     try std.testing.expectEqualStrings(
         "warming_up",
-        fields_unmodified[1].name,
+        names_unmodified[1],
     );
 
-    try std.testing.expectEqual(1 << 2, fields_unmodified[2].value);
-    try std.testing.expectEqualStrings("running", fields_unmodified[2].name);
+    try std.testing.expectEqual(1 << 2, values_unmodified[2]);
+    try std.testing.expectEqualStrings("running", names_unmodified[2]);
 
-    try std.testing.expectEqual(1 << 5, fields_unmodified[3].value);
+    try std.testing.expectEqual(1 << 5, values_unmodified[3]);
     try std.testing.expectEqualStrings(
         "power_low",
-        fields_unmodified[3].name,
+        names_unmodified[3],
     );
 
     //
@@ -357,25 +358,26 @@ test FromBitFlags {
         },
     });
 
-    const fields_constant_case = @typeInfo(StatusConstantCase).@"enum".fields;
-    try std.testing.expectEqual(4, fields_constant_case.len);
+    const names_const_case = @typeInfo(StatusConstantCase).@"enum".field_names;
+    const values_const_case = @typeInfo(StatusConstantCase).@"enum".field_values;
+    try std.testing.expectEqual(4, names_const_case.len);
 
-    try std.testing.expectEqual(1, fields_constant_case[0].value);
-    try std.testing.expectEqualStrings("OFF", fields_constant_case[0].name);
+    try std.testing.expectEqual(1, values_const_case[0]);
+    try std.testing.expectEqualStrings("OFF", names_const_case[0]);
 
-    try std.testing.expectEqual(1 << 1, fields_constant_case[1].value);
+    try std.testing.expectEqual(1 << 1, values_const_case[1]);
     try std.testing.expectEqualStrings(
         "WARMING_UP",
-        fields_constant_case[1].name,
+        names_const_case[1],
     );
 
-    try std.testing.expectEqual(1 << 2, fields_constant_case[2].value);
-    try std.testing.expectEqualStrings("RUNNING", fields_constant_case[2].name);
+    try std.testing.expectEqual(1 << 2, values_const_case[2]);
+    try std.testing.expectEqualStrings("RUNNING", names_const_case[2]);
 
-    try std.testing.expectEqual(1 << 5, fields_constant_case[3].value);
+    try std.testing.expectEqual(1 << 5, values_const_case[3]);
     try std.testing.expectEqualStrings(
         "POWER_LOW",
-        fields_constant_case[3].name,
+        names_const_case[3],
     );
 
     //
@@ -389,35 +391,36 @@ test FromBitFlags {
         },
     });
 
-    const fields_extra_fields = @typeInfo(StatusExtraFields).@"enum".fields;
-    try std.testing.expectEqual(6, fields_extra_fields.len);
+    const names_extra_fields = @typeInfo(StatusExtraFields).@"enum".field_names;
+    const values_extra_fields = @typeInfo(StatusExtraFields).@"enum".field_values;
+    try std.testing.expectEqual(6, names_extra_fields.len);
 
-    try std.testing.expectEqual(1, fields_extra_fields[0].value);
-    try std.testing.expectEqualStrings("off", fields_extra_fields[0].name);
+    try std.testing.expectEqual(1, values_extra_fields[0]);
+    try std.testing.expectEqualStrings("off", names_extra_fields[0]);
 
-    try std.testing.expectEqual(1 << 1, fields_extra_fields[1].value);
+    try std.testing.expectEqual(1 << 1, values_extra_fields[1]);
     try std.testing.expectEqualStrings(
         "warming_up",
-        fields_extra_fields[1].name,
+        names_extra_fields[1],
     );
 
-    try std.testing.expectEqual(1 << 2, fields_extra_fields[2].value);
-    try std.testing.expectEqualStrings("running", fields_extra_fields[2].name);
+    try std.testing.expectEqual(1 << 2, values_extra_fields[2]);
+    try std.testing.expectEqualStrings("running", names_extra_fields[2]);
 
-    try std.testing.expectEqual(1 << 5, fields_extra_fields[3].value);
-    try std.testing.expectEqualStrings("power_low", fields_extra_fields[3].name);
+    try std.testing.expectEqual(1 << 5, values_extra_fields[3]);
+    try std.testing.expectEqualStrings("power_low", names_extra_fields[3]);
 
     try std.testing.expectEqual(
         @as(u8, @bitCast(Status{ .off = true, .power_low = true })),
-        fields_extra_fields[4].value,
+        values_extra_fields[4],
     );
     try std.testing.expectEqualStrings(
         "ready_for_service",
-        fields_extra_fields[4].name,
+        names_extra_fields[4],
     );
 
-    try std.testing.expectEqual(0, fields_extra_fields[5].value);
-    try std.testing.expectEqualStrings("unknown", fields_extra_fields[5].name);
+    try std.testing.expectEqual(0, values_extra_fields[5]);
+    try std.testing.expectEqualStrings("unknown", names_extra_fields[5]);
 
     //
     // With excluded fields:
@@ -430,12 +433,13 @@ test FromBitFlags {
         },
     });
 
-    const fields_filtered = @typeInfo(StatusExcludeFields).@"enum".fields;
-    try std.testing.expectEqual(2, fields_filtered.len);
+    const names_filtered = @typeInfo(StatusExcludeFields).@"enum".field_names;
+    const values_filtered = @typeInfo(StatusExcludeFields).@"enum".field_values;
+    try std.testing.expectEqual(2, names_filtered.len);
 
-    try std.testing.expectEqual(1, fields_filtered[0].value);
-    try std.testing.expectEqualStrings("off", fields_filtered[0].name);
+    try std.testing.expectEqual(1, values_filtered[0]);
+    try std.testing.expectEqualStrings("off", names_filtered[0]);
 
-    try std.testing.expectEqual(1 << 2, fields_filtered[1].value);
-    try std.testing.expectEqualStrings("running", fields_filtered[1].name);
+    try std.testing.expectEqual(1 << 2, values_filtered[1]);
+    try std.testing.expectEqualStrings("running", names_filtered[1]);
 }

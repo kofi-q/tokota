@@ -12,14 +12,14 @@ comptime {
 }
 
 pub fn emit() !void {
-    const decls = @typeInfo(napi).@"struct".decls;
+    const decls = @typeInfo(napi).@"struct".decl_names;
 
     const symbols = comptime blk: {
         var symbols: [decls.len][]const u8 = undefined;
         var len = 0;
-        for (decls) |d| switch (@typeInfo(@TypeOf((@field(napi, d.name))))) {
+        for (decls) |d| switch (@typeInfo(@TypeOf((@field(napi, d))))) {
             .@"fn" => {
-                symbols[len] = d.name;
+                symbols[len] = d;
                 len += 1;
             },
             else => {},

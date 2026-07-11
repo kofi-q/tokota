@@ -304,11 +304,13 @@ pub fn enumObject(self: Env, comptime E: type) !Object {
         else => @compileError("Enum type required"),
     };
 
-    var props: [info.fields.len]Property = undefined;
+    const names = info.field_names;
+    const values = info.field_values;
+    var props: [names.len]Property = undefined;
 
-    inline for (info.fields, 0..) |field, i| props[i] = .value(
-        field.name,
-        try self.infer(@as(info.tag_type, field.value)),
+    inline for (names, values, 0..) |name, value, i| props[i] = .value(
+        name,
+        try self.infer(@as(info.tag_type, value)),
         .{},
     );
 

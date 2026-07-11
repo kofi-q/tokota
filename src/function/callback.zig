@@ -36,20 +36,20 @@ pub fn napiCb(comptime impl: anytype, comptime opts: CbOptions) n.Callback {
         else => |T| CallT(T),
     };
 
-    const idx_args_start = comptime switch (fn_info.params.len) {
+    const idx_args_start = comptime switch (fn_info.param_types.len) {
         0 => 0,
-        else => switch (fn_info.params[0].type.?) {
+        else => switch (fn_info.param_types[0].?) {
             CallResolved => 1,
             else => 0,
         },
     };
 
     const arg_types = comptime blk: {
-        const arg_count = fn_info.params.len;
+        const arg_count = fn_info.param_types.len;
         var arg_types: [arg_count - idx_args_start]type = undefined;
 
-        for (fn_info.params[idx_args_start..], &arg_types) |param, *arg_type| {
-            arg_type.* = param.type.?;
+        for (fn_info.param_types[idx_args_start..], &arg_types) |T, *arg_type| {
+            arg_type.* = T.?;
         }
 
         break :blk arg_types;

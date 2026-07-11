@@ -65,11 +65,13 @@ pub fn build(b: *std.Build) !void {
     build_js.step.dependOn(step_clean);
     step_build_js.dependOn(&build_js.step);
 
-    const clean_js = base.addDirRemove(b, b.path("build"));
-    step_clean.dependOn(&clean_js.step);
+    const clean_js = base.addDirRemove(b, .{ .path = b.path("build") });
+    step_clean.dependOn(clean_js);
 
-    const clean_publish = base.addDirRemove(b, b.path("zig-out/publish"));
-    step_clean.dependOn(&clean_publish.step);
+    const clean_publish = base.addDirRemove(b, .{
+        .path = b.path("zig-out/publish"),
+    });
+    step_clean.dependOn(clean_publish);
 
     const e2e = e2e_build.create(b, step_publish);
     step_e2e.dependOn(e2e.client_run);

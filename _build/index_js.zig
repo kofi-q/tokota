@@ -39,7 +39,7 @@ pub fn generate(
         \\
     );
 
-    var win32_runtimes = std.EnumSet(Runtime).initEmpty();
+    var win32_runtimes = std.EnumSet(Runtime).empty;
     for (targets) |t| {
         const target = b.resolveTargetQuery(t.query).result;
 

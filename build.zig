@@ -9,7 +9,7 @@ pub const node_stub_so = _build.node_stub_so;
 pub const npm = _build.npm;
 pub const tokota = _build.tokota;
 
-pub fn build(b: *std.Build) void {
+pub fn build(b: *std.Build) !void {
     const mode = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
 
@@ -121,7 +121,7 @@ pub fn build(b: *std.Build) void {
     const node_test = b.addSystemCommand(&.{ "node", "--expose-gc", "--test" });
     node_test.setCwd(b.path("."));
     steps.test_node.dependOn(&node_test.step);
-    if (b.args) |args| node_test.addArgs(args);
+    node_test.addPassthruArgs();
 
     const deno_test = denoTest(b, target.result);
     steps.test_deno.dependOn(deno_test);
@@ -145,7 +145,7 @@ pub fn build(b: *std.Build) void {
 
         steps.check.dependOn(&b.addLibrary(.{
             .name = blk: {
-                const name = b.dupe(config.dir);
+                const name = try b.allocator.dupe(u8, config.dir);
                 std.mem.replaceScalar(u8, name, '/', '-');
 
                 break :blk b.fmt("[check] {s}", .{name});
@@ -237,7 +237,7 @@ fn fmt(b: *std.Build, steps: *const Steps) void {
 
     const zig_fmt = b.addFmt(.{
         .check = isCi(b),
-        .paths = &.{"src"},
+        .paths = &.{b.path("src")},
     });
 
     steps.fmt.dependOn(&zig_fmt.step);

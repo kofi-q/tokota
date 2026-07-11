@@ -256,7 +256,7 @@ fn CallImpl(comptime Self: type) type {
             comptime types: anytype,
         ) !ArgsTuple(types) {
             const Args = ArgsTuple(types);
-            const fields = comptime @typeInfo(Args).@"struct".fields;
+            const fields = comptime @typeInfo(Args).@"struct".field_names;
             const max_count = comptime fields.len;
 
             var buf_args: [max_count]Val = undefined;
