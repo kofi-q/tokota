@@ -712,6 +712,10 @@ fn parsePackageJson(
         ),
     };
 
+    // [TODO] If/when the Zig build system supports declaring cache-invalidation
+    // dependencies on repo files, lazy paths, use that instead.
+    b.graph.poisonCache();
+
     const cwd: std.Io.Dir = .cwd();
     const file = cwd.openFile(io, file_path, .{
         .mode = .read_only,
