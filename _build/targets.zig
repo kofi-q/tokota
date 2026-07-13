@@ -2,7 +2,7 @@ const std = @import("std");
 
 pub const AddonTarget = struct {
     query: std.Target.Query,
-    win32_runtime: Runtime = .node,
+    win32_runtime: Runtime = .dynamic,
 };
 
 pub fn nodeAbi(target: std.Target) ?[]const u8 {
@@ -44,11 +44,17 @@ pub fn nodeTriple(
             nodeCpu(target),
             nodeAbi(target).?,
         }),
-        .windows => b.fmt("{s}-{s}-{t}", .{
-            nodeOs(.windows),
-            nodeCpu(target),
-            win32_runtime,
-        }),
+        .windows => switch (win32_runtime) {
+            .dynamic => b.fmt("{s}-{s}", .{
+                nodeOs(.windows),
+                nodeCpu(target),
+            }),
+            else => b.fmt("{s}-{s}-{t}", .{
+                nodeOs(.windows),
+                nodeCpu(target),
+                win32_runtime,
+            }),
+        },
         else => b.fmt("{s}-{s}", .{
             nodeOs(target.os.tag),
             nodeCpu(target),
@@ -76,11 +82,17 @@ pub fn packageName(
                 target.cpu.arch,
                 target.abi,
             }),
-            .windows => b.fmt("{t}-{t}-{t}", .{
-                target.os.tag,
-                target.cpu.arch,
-                win32_runtime,
-            }),
+            .windows => switch (win32_runtime) {
+                .dynamic => b.fmt("{t}-{t}", .{
+                    target.os.tag,
+                    target.cpu.arch,
+                }),
+                else => b.fmt("{t}-{t}-{t}", .{
+                    target.os.tag,
+                    target.cpu.arch,
+                    win32_runtime,
+                }),
+            },
             else => b.fmt("{t}-{t}", .{
                 target.os.tag,
                 target.cpu.arch,
@@ -92,6 +104,7 @@ pub fn packageName(
 pub const Runtime = enum {
     bun,
     deno,
+    dynamic,
     electron,
     node,
 

@@ -30,10 +30,9 @@ pub fn generate(
         \\
         \\let pkg;
         \\
-        \\const abi = detectAbi();
-        \\const target = (abi)
-        \\  ? `${process.platform}-${process.arch}-${abi}`
-        \\  : `${process.platform}-${process.arch}`;
+        \\const target = [process.platform, process.arch, detectAbi()]
+        \\  .filter(Boolean)
+        \\  .join('-');
         \\
         \\switch (target) {
         \\
@@ -100,8 +99,18 @@ pub fn generate(
             \\    if (process.versions.electron) return "electron";
             \\
         );
+        if (win32_runtimes.contains(.node)) {
+            try output.writer.writeAll(
+                \\    return "node";
+                \\
+            );
+        } else {
+            try output.writer.writeAll(
+                \\    return null;
+                \\
+            );
+        }
         try output.writer.writeAll(
-            \\    return "node";
             \\  }
             \\
             \\

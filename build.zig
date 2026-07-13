@@ -4,14 +4,21 @@ const base = @import("base");
 
 pub const _build = @import("_build/root.zig");
 pub const Addon = _build.Addon;
+pub const napi_proxy = _build.napi_proxy;
 pub const node_dll = _build.node_dll;
 pub const node_stub_so = _build.node_stub_so;
 pub const npm = _build.npm;
 pub const tokota = _build.tokota;
+const targets = @import("_build/targets.zig");
 
 pub fn build(b: *std.Build) !void {
     const mode = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
+    const win32_runtime = b.option(
+        targets.Runtime,
+        "win32-runtime",
+        "Windows addon runtime mode: dynamic|node|electron|bun|deno",
+    ) orelse .dynamic;
 
     const steps = Steps{
         .check = b.step("check", "Generate compiler diagnostics"),
@@ -23,19 +30,34 @@ pub fn build(b: *std.Build) !void {
         .test_ci = b.step("test:ci", "Run CI tests"),
         .test_deno = b.step("test:deno", "Run Deno integration tests"),
         .test_node = b.step("test:node", "Run NodeJS integration tests"),
+        .test_win = b.step(
+            "test:win",
+            "Cross-compile Windows addons for architecture/runtime matrix",
+        ),
         .test_zig = b.step("test:zig", "Run native unit tests"),
         .typecheck = b.step("typecheck", "Run JS type checks"),
         .symbols = b.step("symbols", "Generate Node-API symbol stubs"),
+        .symbols_check = b.step(
+            "symbols:check",
+            "Fail if generated Node-API symbol stubs are out of date",
+        ),
     };
 
+    steps.check.dependOn(steps.symbols);
+
     steps.tests.dependOn(steps.fmt);
+    steps.tests.dependOn(steps.symbols);
     steps.tests.dependOn(steps.test_bun);
     steps.tests.dependOn(steps.test_deno);
     steps.tests.dependOn(steps.test_node);
+    steps.tests.dependOn(steps.test_win);
     steps.tests.dependOn(steps.test_zig);
     steps.tests.dependOn(steps.typecheck);
 
     steps.test_ci.dependOn(steps.fmt);
+    steps.test_ci.dependOn(steps.symbols);
+    steps.test_ci.dependOn(steps.symbols_check);
+    steps.test_ci.dependOn(steps.test_win);
     steps.test_ci.dependOn(steps.test_zig);
     steps.test_ci.dependOn(steps.typecheck);
 
@@ -47,9 +69,9 @@ pub fn build(b: *std.Build) !void {
     var dep_tokota_internal = std.Build.Dependency{ .builder = b };
 
     b.addNamedLazyPath(node_dll.def_name, b.path(node_dll.def_path));
+    b.addNamedLazyPath(napi_proxy.src_name, b.path(napi_proxy.src_path));
     b.addNamedLazyPath(node_stub_so.src_name, b.path(node_stub_so.src_path));
 
-    // [TODO] Add CI checks for up-to-date stubs.
     steps.symbols.dependOn(&node_dll.updateSource(
         b,
         steps.check,
@@ -62,6 +84,26 @@ pub fn build(b: *std.Build) !void {
         mode,
         &dep_tokota_internal,
     ).step);
+    steps.symbols.dependOn(&napi_proxy.updateSource(
+        b,
+        steps.check,
+        mode,
+        &dep_tokota_internal,
+    ).step);
+
+    const symbols_diff = b.addSystemCommand(&.{
+        "git",
+        "diff",
+        "--exit-code",
+        "--",
+    });
+    symbols_diff.addArgs(&.{
+        node_stub_so.src_path,
+        node_dll.def_path,
+        napi_proxy.src_path,
+    });
+    symbols_diff.step.dependOn(steps.symbols);
+    steps.symbols_check.dependOn(&symbols_diff.step);
 
     depsJs(b, &steps);
     fmt(b, &steps);
@@ -82,6 +124,7 @@ pub fn build(b: *std.Build) !void {
     });
     Addon.linkNodeStub(b, lib_tokota_tests, .{
         .dep_tokota = &dep_tokota_internal,
+        .win32_runtime = win32_runtime,
     });
 
     const cmd_test_tokota = b.addRunArtifact(lib_tokota_tests);
@@ -103,6 +146,7 @@ pub fn build(b: *std.Build) !void {
             ),
             .target = target,
             .tokota = .{ .dep = &dep_tokota_internal },
+            .win32_runtime = win32_runtime,
         });
 
         const node_run = b.addSystemCommand(&.{
@@ -116,14 +160,52 @@ pub fn build(b: *std.Build) !void {
             "Run example: '" ++ config.name ++ "'",
         );
         example_run.dependOn(&node_run.step);
+
+        // Separate build can be useful for testing cross-compilation, e.g.:
+        // zig build -Dtarget=x86_64-windows examples:add:build
+        const example_build = b.step(
+            "examples:" ++ config.name ++ ":build",
+            "Build example: '" ++ config.name ++ "'",
+        );
+        example_build.dependOn(&addon.install.step);
     }
+
+    inline for ([_]std.Target.Cpu.Arch{ .x86_64, .aarch64 }) |arch| {
+        const win32_target = b.resolveTargetQuery(.{
+            .cpu_arch = arch,
+            .os_tag = .windows,
+        });
+
+        inline for ([_]targets.Runtime{ .dynamic, .node }) |runtime| {
+            const addon = Addon.create(b, .{
+                .mode = mode,
+                .name = b.fmt("check.addon.win32.{s}.{s}", .{
+                    @tagName(arch),
+                    @tagName(runtime),
+                }),
+                .output_dir = .{ .custom = "../.zig-cache/win32-check" },
+                .root_source_file = b.path("examples/add/main.zig"),
+                .target = win32_target,
+                .tokota = .{ .dep = &dep_tokota_internal },
+                .win32_runtime = runtime,
+            });
+
+            steps.test_win.dependOn(&addon.install.step);
+        }
+    }
+
+    const node_arch_check = addRuntimeArchCheck(b, .node, target);
+    const bun_arch_check = addRuntimeArchCheck(b, .bun, target);
+    const deno_arch_check = addRuntimeArchCheck(b, .deno, target);
 
     const node_test = b.addSystemCommand(&.{ "node", "--expose-gc", "--test" });
     node_test.setCwd(b.path("."));
+    node_test.step.dependOn(&node_arch_check.step);
     steps.test_node.dependOn(&node_test.step);
     node_test.addPassthruArgs();
 
     const deno_test = denoTest(b, target.result);
+    deno_test.dependOn(&deno_arch_check.step);
     steps.test_deno.dependOn(deno_test);
 
     inline for (tests.configs) |config| {
@@ -140,6 +222,7 @@ pub fn build(b: *std.Build) !void {
             .root_source_file = b.path(b.pathJoin(&.{ dirpath, "test.zig" })),
             .target = target,
             .tokota = .{ .dep = &dep_tokota_internal },
+            .win32_runtime = win32_runtime,
         });
         addon.lib.use_llvm = true;
 
@@ -157,6 +240,7 @@ pub fn build(b: *std.Build) !void {
         deno_test.dependOn(&addon.install.step);
 
         const bun_test = bunTest(b, b.pathJoin(&.{ ".", dirpath, "test.mjs" }));
+        bun_test.dependOn(&bun_arch_check.step);
         bun_test.dependOn(&addon.install.step);
         steps.test_bun.dependOn(bun_test);
     }
@@ -308,6 +392,62 @@ fn isCi(b: *std.Build) bool {
     return b.graph.environ_map.get("CI") != null;
 }
 
+// Runtimes may not be the same architecture as the build target.
+// Before running tests, spawn a runtime process to check that the architecture
+// matches and print a helpful error message if not.
+fn addRuntimeArchCheck(
+    b: *std.Build,
+    runtime: targets.Runtime,
+    target: std.Build.ResolvedTarget,
+) *std.Build.Step.Run {
+    const expected_zig_arch = @tagName(target.result.cpu.arch);
+    const target_os = @tagName(target.result.os.tag);
+    const runtime_name = @tagName(runtime);
+
+    const cmd = switch (runtime) {
+        .bun => b.addSystemCommand(&.{ "bun", "--eval" }),
+        .deno => b.addSystemCommand(&.{ "deno", "eval" }),
+        .node => b.addSystemCommand(&.{ "node", "--eval" }),
+        else => @panic("Unsupported runtime for arch check"),
+    };
+
+    cmd.addArg(switch (runtime) {
+        .deno =>
+        \\const expected = Deno.args[0];
+        \\const os = Deno.args[1];
+        \\const runtime = Deno.args[2];
+        \\const actual = Deno.build.arch;
+        \\const asZig = actual;
+        \\if (asZig !== expected) {
+        \\  console.error("[tokota] " + runtime + " runtime architecture mismatch (runtime=" + actual + ", build target=" + expected + ").");
+        \\  console.error("[tokota] Use -Dtarget=" + asZig + "-" + os);
+        \\  Deno.exit(1);
+        \\}
+        ,
+        else =>
+        \\const expected = process.argv[1];
+        \\const os = process.argv[2];
+        \\const runtime = process.argv[3];
+        \\const actual = process.arch;
+        \\const asZig = actual === "x64" ? "x86_64" :
+        \\  actual === "arm64" ? "aarch64" :
+        \\  actual === "ia32" ? "x86" :
+        \\  actual;
+        \\if (asZig !== expected) {
+        \\  console.error("[tokota] " + runtime + " runtime architecture mismatch (runtime=" + actual + ", build target=" + expected + ").");
+        \\  console.error("[tokota] Use -Dtarget=" + asZig + "-" + os);
+        \\  process.exit(1);
+        \\}
+        ,
+    });
+    cmd.addArg(expected_zig_arch);
+    cmd.addArg(target_os);
+    cmd.addArg(runtime_name);
+    cmd.setCwd(b.path("."));
+
+    return cmd;
+}
+
 const examples = struct {
     const Config = struct {
         name: []const u8,
@@ -366,7 +506,9 @@ const Steps = struct {
     test_ci: *std.Build.Step,
     test_deno: *std.Build.Step,
     test_node: *std.Build.Step,
+    test_win: *std.Build.Step,
     test_zig: *std.Build.Step,
     typecheck: *std.Build.Step,
     symbols: *std.Build.Step,
+    symbols_check: *std.Build.Step,
 };

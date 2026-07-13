@@ -2,6 +2,7 @@
 
 const std = @import("std");
 
+const napi_proxy = @import("windows/napi_proxy_source.zig");
 const node_dll = @import("windows/node_dll.zig");
 const node_stub_so = @import("linux/node_stub_so.zig");
 const targets = @import("targets.zig");
@@ -70,15 +71,13 @@ pub const Options = struct {
     /// Optional tokota module configuration.
     tokota: Tokota = .{},
 
-    /// When targeting Windows, the addon needs to be linked against a specific
-    /// executable name (node.exe, by default). Specify a different target
-    /// runtime if the addon will be loaded within a non-Node.js runtime.
+    /// Controls the runtime lookup mode when targeting Windows.
     ///
-    /// This is a temporary workaround until a better solution is found, or
-    /// until Zig provides delay-load support to enable lazily linking to the
-    /// calling runtime when first loaded:
-    /// https://github.com/ziglang/zig/issues/7049
-    win32_runtime: targets.Runtime = .node,
+    /// - `.dynamic` resolves Node-API symbols from the host process at
+    ///   runtime (default; closest to node-gyp delay-load behavior).
+    /// - Any concrete runtime (`.node`, `.electron`, `.bun`, `.deno`) uses
+    ///   import-lib resolution with a fixed host executable name.
+    win32_runtime: targets.Runtime = .dynamic,
 
     pub const Tokota = struct {
         /// The tokota build dependency, via `std.Build.dependency()`, if
@@ -124,10 +123,13 @@ pub fn create(b: *std.Build, opts: Options) Addon {
     });
 
     switch (opts.target.result.os.tag) {
-        .windows => linkNodeStubWin32(b, lib, .{
-            .dep_tokota = opts.tokota.dep,
-            .win32_runtime = opts.win32_runtime,
-        }),
+        .windows => switch (opts.win32_runtime) {
+            .dynamic => linkNodeRuntimeLookupWin32(b, lib, dep_tokota),
+            else => linkNodeStubWin32(b, lib, .{
+                .dep_tokota = opts.tokota.dep,
+                .win32_runtime = opts.win32_runtime,
+            }),
+        },
         else => lib.linker_allow_shlib_undefined = true,
     }
 
@@ -152,15 +154,13 @@ pub const LibnodeStubOpts = struct {
     /// created via std.Build.dependency("tokota")
     dep_tokota: ?*std.Build.Dependency = null,
 
-    /// When targeting Windows, the addon needs to be linked against a specific
-    /// executable name (node.exe, by default). Specify a different target
-    /// runtime if the addon will be loaded within a non-Node.js runtime.
+    /// Controls the runtime lookup mode when targeting Windows.
     ///
-    /// This is a temporary workaround until a better solution is found, or
-    /// until Zig provides delay-load support to enable lazily linking to the
-    /// calling runtime when first loaded:
-    /// https://github.com/ziglang/zig/issues/7049
-    win32_runtime: targets.Runtime = .node,
+    /// - `.dynamic` resolves Node-API symbols from the host process at
+    ///   runtime (default; closest to node-gyp delay-load behavior).
+    /// - Any concrete runtime (`.node`, `.electron`, `.bun`, `.deno`) uses
+    ///   import-lib resolution with a fixed host executable name.
+    win32_runtime: targets.Runtime = .dynamic,
 };
 
 /// Links a stub library containing Node-API symbols to enable compiling addon
@@ -173,7 +173,19 @@ pub fn linkNodeStub(
 ) void {
     switch (lib.rootModuleTarget().os.tag) {
         .linux => linkNodeStubLinux(b, lib, opts),
-        .windows => linkNodeStubWin32(b, lib, opts),
+        .windows => switch (opts.win32_runtime) {
+            .dynamic => {
+                const dep_tokota = opts.dep_tokota orelse b.dependency(
+                    "tokota",
+                    .{
+                        .optimize = lib.root_module.optimize.?,
+                        .target = lib.root_module.resolved_target,
+                    },
+                );
+                linkNodeRuntimeLookupWin32(b, lib, dep_tokota);
+            },
+            else => linkNodeStubWin32(b, lib, opts),
+        },
         else => lib.linker_allow_shlib_undefined = true,
     }
 }
@@ -211,4 +223,25 @@ pub fn linkNodeStubWin32(
     lib.step.dependOn(&node_dll_step.step);
     lib.root_module.addLibraryPath(node_dll_path.dirname());
     lib.root_module.linkSystemLibrary("node", .{});
+}
+
+fn linkNodeRuntimeLookupWin32(
+    b: *std.Build,
+    lib: *std.Build.Step.Compile,
+    dep_tokota: *std.Build.Dependency,
+) void {
+    const obj = b.addObject(.{
+        .name = "tokota_napi_proxy",
+        .root_module = b.createModule(.{
+            .imports = &.{.{
+                .name = "tokota",
+                .module = dep_tokota.module("tokota"),
+            }},
+            .optimize = lib.root_module.optimize.?,
+            .root_source_file = dep_tokota.namedLazyPath(napi_proxy.src_name),
+            .target = lib.root_module.resolved_target,
+        }),
+    });
+
+    lib.root_module.addObject(obj);
 }
